@@ -15,48 +15,65 @@ export class MoviesService {
     );
   }
 
-  async create(createMovieDto: CreateMovieDto, headers: any) {
+  async create(createMovieDto: CreateMovieDto, headers: any): Promise<any> {
     if (_.isEmpty(createMovieDto.title)) {
       return { error: 'Title cannot be blank' };
     }
 
+    const viewingDate = this.calculateViewingDate(createMovieDto);
+    try {
+      const movieDetails = await this.fetchMovieDetails(createMovieDto.title);
+      const newMovie = this.constructNewMovie(createMovieDto, movieDetails, viewingDate);
+      return await this.postNewMovie(newMovie, headers);
+    } catch (e) {
+      await this.postEvent('create_movie_failed', createMovieDto.title);
+      return { error: `Failed to create movie - ${e.message}` };
+    }
+  }
+
+  private calculateViewingDate(createMovieDto: CreateMovieDto): Date {
     let viewingDate = new Date(createMovieDto.date || createMovieDto.startDate || Date.now());
     if (!_.isEmpty(createMovieDto.startDate) && _.isEmpty(createMovieDto.date)) {
       viewingDate = this.randomDate(new Date(createMovieDto.startDate), createMovieDto.endDate);
     }
+    return viewingDate;
+  }
 
-    try {
-      const movieDetailsResponse = await axios.get(
-        `http://www.omdbapi.com/?t=${createMovieDto.title}&apikey=${this.configService.get<string>('OMDB')}`
-      );
+  private async fetchMovieDetails(title: string): Promise<any> {
+    const response = await axios.get(
+      `http://www.omdbapi.com/?t=${title}&apikey=${this.configService.get<string>('OMDB')}`
+    );
+    return response.data;
+  }
 
-      const movieDetails = movieDetailsResponse.data;
-      const newMovie = {
-        title: movieDetails.Title,
-        description: movieDetails.Plot,
-        language: 'English',
-        year: Number(movieDetails.Year),
-        genre: movieDetails.Genre,
-        viewingDate: viewingDate,
-        imdbRating: Number(_.get(movieDetails.Ratings[0], 'Value').split('/')[0]),
-        imdbId: movieDetails.imdbID,
-        loved: createMovieDto.loved || true,
-      };
+  private constructNewMovie(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
+    return {
+      title: movieDetails.Title,
+      description: movieDetails.Plot,
+      language: 'English',
+      year: Number(movieDetails.Year),
+      genre: movieDetails.Genre,
+      viewingDate: viewingDate,
+      imdbRating: Number(_.get(movieDetails.Ratings[0], 'Value').split('/')[0]),
+      imdbId: movieDetails.imdbID,
+      loved: createMovieDto.loved || true,
+    };
+  }
 
-      const config = {
-        headers: {
-          apiKey: headers.apikey,
-        },
-      };
+  private async postNewMovie(newMovie: any, headers: any): Promise<any> {
+    const config = {
+      headers: {
+        apiKey: headers.apikey,
+      },
+    };
+    const response = await axios.post('https://api.ashish.me/movies', newMovie, config);
+    return response.data;
+  }
 
-      const movieCreated = await axios.post('https://api.ashish.me/movies', newMovie, config);
-      return movieCreated.data;
-    } catch (e) {
-      await axios.post('https://api.ashish.me/events', {
-        type: 'create_movie_failed',
-        message: createMovieDto.title,
-      });
-      return { error: `Failed to create movie - ${e.message}` };
-    }
+  private async postEvent(type: string, message: string): Promise<void> {
+    await axios.post('https://api.ashish.me/events', {
+      type: type,
+      message: message,
+    });
   }
 }
