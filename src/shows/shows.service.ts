@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateShowDto } from './dto/create-show.dto';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { sendEvent, fetchDetailsFromOmdb} from '../common/utils'
 
 @Injectable()
 export class ShowsService {
@@ -14,18 +15,8 @@ export class ShowsService {
     );
   }
 
-  private async fetchShowDetails(title: string): Promise<any> {
-    try {
-      const response = await axios.get(
-        `http://www.omdbapi.com/?t=${title}&apikey=${this.configService.get<string>('OMDB')}`,
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error('Failed to fetch show details');
-    }
-  }
 
-  private buildNewShow(createShowDto: CreateShowDto, showDetails: any, viewingDate: Date): any {
+  private buildShowPayload(createShowDto: CreateShowDto, showDetails: any, viewingDate: Date): any {
     return {
       title: `${showDetails.Title} Season ${createShowDto.seasonNumber}`,
       seasonNumber: createShowDto.seasonNumber,
@@ -54,39 +45,33 @@ export class ShowsService {
     let showDetails: any;
 
     try {
-      showDetails = await this.fetchShowDetails(createShowDto.title);
+      showDetails = await fetchDetailsFromOmdb(createShowDto.title);
     } catch (error) {
-      await this.logEvent('create_show_failed', createShowDto.title);
+      await sendEvent('create_show_failed', createShowDto.title);
       return { error: error.message };
     }
     if (!createShowDto.date && createShowDto.startDate) {
       viewingDate = this.randomDate(new Date(createShowDto.startDate), createShowDto.endDate);
     }
 
-    const newShow = this.buildNewShow(createShowDto, showDetails, viewingDate);
+    const shoywPayload = this.buildShowPayload(createShowDto, showDetails, viewingDate);
 
     try {
       const config = {
         headers: {
-          authorization: headers.authorization,
+          apiKey: headers.apikey,
         },
       };
       const showCreated = await axios.post(
-        'https://systemapi.prod.ashish.me/shows',
-        newShow,
+        'https://api.ashish.me/shows',
+        shoywPayload,
         config,
       );
       return showCreated.data;
     } catch (error) {
-      await this.logEvent('create_show_failed', createShowDto.title);
-      return { error: `Failed to create show - ${error.message}` };
+      await sendEvent('create_show_failed', createShowDto.title);
     }
   }
 
-  private async logEvent(type: string, message: string): Promise<void> {
-    await axios.post('https://systemapi.prod.ashish.me/events', {
-      type,
-      message,
-    });
-  }
+
 }

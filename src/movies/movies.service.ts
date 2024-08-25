@@ -3,6 +3,7 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import * as _ from 'lodash';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
+import { sendEvent, fetchDetailsFromOmdb} from '../common/utils'
 
 @Injectable()
 export class MoviesService {
@@ -22,11 +23,11 @@ export class MoviesService {
 
     const viewingDate = this.calculateViewingDate(createMovieDto);
     try {
-      const movieDetails = await this.fetchMovieDetails(createMovieDto.title);
+      const movieDetails = await fetchDetailsFromOmdb(createMovieDto.title);
       const newMovie = this.constructNewMovie(createMovieDto, movieDetails, viewingDate);
       return await this.postNewMovie(newMovie, headers);
     } catch (e) {
-      await this.postEvent('create_movie_failed', createMovieDto.title);
+      await sendEvent('create_movie_failed', createMovieDto.title);
       return { error: `Failed to create movie - ${e.message}` };
     }
   }
@@ -37,13 +38,6 @@ export class MoviesService {
       viewingDate = this.randomDate(new Date(createMovieDto.startDate), createMovieDto.endDate);
     }
     return viewingDate;
-  }
-
-  private async fetchMovieDetails(title: string): Promise<any> {
-    const response = await axios.get(
-      `http://www.omdbapi.com/?t=${title}&apikey=${this.configService.get<string>('OMDB')}`
-    );
-    return response.data;
   }
 
   private constructNewMovie(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
@@ -68,12 +62,5 @@ export class MoviesService {
     };
     const response = await axios.post('https://api.ashish.me/movies', newMovie, config);
     return response.data;
-  }
-
-  private async postEvent(type: string, message: string): Promise<void> {
-    await axios.post('https://api.ashish.me/events', {
-      type: type,
-      message: message,
-    });
   }
 }
