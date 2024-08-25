@@ -24,7 +24,7 @@ export class MoviesService {
     const viewingDate = this.calculateViewingDate(createMovieDto);
     try {
       const movieDetails = await fetchDetailsFromOmdb(createMovieDto.title);
-      const newMovie = this.constructNewMovie(createMovieDto, movieDetails, viewingDate);
+      const newMovie = this.buildNewMoviePayload(createMovieDto, movieDetails, viewingDate);
       return await this.postNewMovie(newMovie, headers);
     } catch (e) {
       await sendEvent('create_movie_failed', createMovieDto.title);
@@ -40,7 +40,7 @@ export class MoviesService {
     return viewingDate;
   }
 
-  private constructNewMovie(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
+  private buildNewMoviePayload(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
     return {
       title: movieDetails.Title,
       description: movieDetails.Plot,
