@@ -9,7 +9,7 @@ COPY --chown=node:node package*.json tsconfig*.json ./
 RUN rm package-lock.json
 
 
-RUN npm install --fetch-timeout 3600000 --maxsockets 1
+RUN npm install
 COPY --chown=node:node . .
 ENV NODE_ENV production
 RUN npm run build
