@@ -2,21 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { CreateShowDto } from './dto/create-show.dto';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import * as _ from 'lodash';
 
 @Injectable()
 export class ShowsService {
   constructor(private configService: ConfigService) {}
 
   randomDate(start, end) {
-    end = _.isUndefined(end) ? new Date() : new Date(end);
+    end = end ? new Date(end) : new Date();
     return new Date(
       start.getTime() + Math.random() * (end.getTime() - start.getTime()),
     );
   }
 
   async create(createShowDto: CreateShowDto, headers: any) {
-    if (_.isEmpty(createShowDto.title)) {
+    if (!createShowDto.title) {
       return { error: 'Title cannot be blank' };
     }
     let newShow = {};
@@ -26,9 +25,9 @@ export class ShowsService {
         createShowDto.title
       }&apikey=${this.configService.get<string>('OMDB')}`,
     );
-    if (!_.isEmpty(createShowDto.date)) {
+    if (createShowDto.date) {
       viewingDate = new Date(createShowDto.date);
-    } else if (!_.isEmpty(createShowDto.startDate)) {
+    } else if (createShowDto.startDate) {
       viewingDate = this.randomDate(
         new Date(createShowDto.startDate),
         createShowDto.endDate,
@@ -51,13 +50,10 @@ export class ShowsService {
           genre: showDetails.Genre,
           startedDate: viewingDate,
           status: 'Started',
-          imdbRating: Number(
-            _.get(showDetails.Ratings[0], 'Value').split('/')[0],
-          ),
+          imdbRating: Number(showDetails.Ratings?.[0]?.Value?.split('/')[0] ?? 0),
           imdbId: showDetails.imdbID,
           loved: createShowDto.loved || true,
         };
-        console.log(newShow);
         const config = {
           headers: {
             authorization: headers.authorization,
