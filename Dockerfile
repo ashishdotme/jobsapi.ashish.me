@@ -24,6 +24,5 @@ EXPOSE 3000
 WORKDIR /app
 COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
-COPY --chown=node:node --from=base /app/scripts ./scripts
 COPY --chown=node:node --from=base /app/package.json ./
 CMD [ "node", "dist/main.js" ]
