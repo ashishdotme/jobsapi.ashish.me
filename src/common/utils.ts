@@ -13,7 +13,7 @@ export const sendEvent = async (
 
 
 
-export const fetchDetailsFromOmdb = async(title: string): Promise<any> => {
+export const fetchDetailsFromOmdb = async(title: string, omdbApiKey): Promise<any> => {
     try {
       const response = await axios.get(
         `http://www.omdbapi.com/?t=${title}&apikey=${this.configService.get<string>('OMDB')}`,

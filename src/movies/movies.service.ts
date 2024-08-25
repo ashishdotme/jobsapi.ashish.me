@@ -7,6 +7,9 @@ import { sendEvent, fetchDetailsFromOmdb} from '../common/utils'
 
 @Injectable()
 export class MoviesService {
+
+  private OMDB_APIKEY: string = this.configService.get<string>('OMDB')
+
   constructor(private configService: ConfigService) {}
 
   randomDate(start, end) {
@@ -23,7 +26,7 @@ export class MoviesService {
 
     const viewingDate = this.calculateViewingDate(createMovieDto);
     try {
-      const movieDetails = await fetchDetailsFromOmdb(createMovieDto.title);
+      const movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
       const newMovie = this.buildNewMoviePayload(createMovieDto, movieDetails, viewingDate);
       return await this.postNewMovie(newMovie, headers);
     } catch (e) {

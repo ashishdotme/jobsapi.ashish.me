@@ -6,6 +6,9 @@ import { sendEvent, fetchDetailsFromOmdb} from '../common/utils'
 
 @Injectable()
 export class ShowsService {
+
+  private OMDB_APIKEY: string = this.configService.get<string>('OMDB')
+  
   constructor(private configService: ConfigService) {}
 
   randomDate(start, end) {
@@ -45,7 +48,7 @@ export class ShowsService {
     let showDetails: any;
 
     try {
-      showDetails = await fetchDetailsFromOmdb(createShowDto.title);
+      showDetails = await fetchDetailsFromOmdb(createShowDto.title, this.OMDB_APIKEY);
     } catch (error) {
       await sendEvent('create_show_failed', createShowDto.title);
       return { error: error.message };
