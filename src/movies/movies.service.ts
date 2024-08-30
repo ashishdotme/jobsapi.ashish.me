@@ -19,7 +19,7 @@ export class MoviesService {
     );
   }
 
-  async create(createMovieDto: CreateMovieDto, headers: any): Promise<any> {
+  async create(createMovieDto: CreateMovieDto, apikey: string): Promise<any> {
     if (_.isEmpty(createMovieDto.title)) {
       return { error: 'Title cannot be blank' };
     }
@@ -28,7 +28,7 @@ export class MoviesService {
     try {
       const movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
       const newMovie = this.buildNewMoviePayload(createMovieDto, movieDetails, viewingDate);
-      return await this.postNewMovie(newMovie, headers);
+      return await this.postNewMovie(newMovie, apikey);
     } catch (e) {
       await sendEvent('create_movie_failed', createMovieDto.title);
       return { error: `Failed to create movie - ${e.message}` };
@@ -57,10 +57,10 @@ export class MoviesService {
     };
   }
 
-  private async postNewMovie(newMovie: any, headers: any): Promise<any> {
+  private async postNewMovie(newMovie: any, apikey: string): Promise<any> {
     const config = {
       headers: {
-        apiKey: headers.apikey,
+        apiKey: apikey,
       },
     };
     const response = await axios.post('https://api.ashish.me/movies', newMovie, config);

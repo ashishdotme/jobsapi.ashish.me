@@ -1,4 +1,4 @@
-import { Controller, Request, Post, Body } from '@nestjs/common';
+import { Controller, Request, Post, Body, Query } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import {
@@ -13,9 +13,8 @@ export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
   @Post()
-  create(@Request() req, @Body() createMovieDto: CreateMovieDto, ) {
-    console.log(req.headers)
-    console.log(req.headers.apikey)
-    return this.moviesService.create(createMovieDto, req.headers);
+  create(@Request() req, @Body() createMovieDto: CreateMovieDto, @Query('apikey') apiKeyParam: number,) {
+    const apiKey = apiKeyParam || req.headers.apikey
+    return this.moviesService.create(createMovieDto, apiKey);
   }
 }
