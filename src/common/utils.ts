@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-
 export const sendEvent = async (
   type: string,
   message: string,
@@ -11,15 +10,16 @@ export const sendEvent = async (
   });
 };
 
-
-
-export const fetchDetailsFromOmdb = async(title: string, omdbApiKey): Promise<any> => {
-    try {
-      const response = await axios.get(
-        `http://www.omdbapi.com/?t=${title}&apikey=${omdbApiKey}`,
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error('Failed to fetch show details');
-    }
+export const fetchDetailsFromOmdb = async (
+  title: string,
+  omdbApiKey,
+): Promise<any> => {
+  try {
+    const response = await axios.get(
+      `http://www.omdbapi.com/?t=${title}&apikey=${omdbApiKey}`,
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(`Failed to fetch details from OMDB - ${error}`);
   }
+};

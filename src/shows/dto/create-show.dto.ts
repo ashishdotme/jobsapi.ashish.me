@@ -1,24 +1,21 @@
-import {
-  ApiProperty,
-} from '@nestjs/swagger';
-
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateShowDto {
   @ApiProperty()
-  title: string
+  title: string;
 
   @ApiProperty()
-  date?: string
+  date?: string;
 
   @ApiProperty()
-  seasonNumber?: number
+  seasonNumber?: number;
 
   @ApiProperty()
-  startDate?: string
+  startDate?: string;
 
   @ApiProperty()
-  endDate?: string
+  endDate?: string;
 
   @ApiProperty()
-  loved?: boolean
+  loved?: boolean;
 }

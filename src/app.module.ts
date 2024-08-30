@@ -6,9 +6,13 @@ import { ShowsModule } from './shows/shows.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [MoviesModule, ConfigModule.forRoot({
-    isGlobal: true,
-  }), ShowsModule],
+  imports: [
+    MoviesModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    ShowsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

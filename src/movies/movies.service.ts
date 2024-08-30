@@ -3,12 +3,11 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import * as _ from 'lodash';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { sendEvent, fetchDetailsFromOmdb} from '../common/utils'
+import { sendEvent, fetchDetailsFromOmdb } from '../common/utils';
 
 @Injectable()
 export class MoviesService {
-
-  private OMDB_APIKEY: string = this.configService.get<string>('OMDB')
+  private OMDB_APIKEY: string = this.configService.get<string>('OMDB');
 
   constructor(private configService: ConfigService) {}
 
@@ -26,8 +25,15 @@ export class MoviesService {
 
     const viewingDate = this.calculateViewingDate(createMovieDto);
     try {
-      const movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
-      const newMovie = this.buildNewMoviePayload(createMovieDto, movieDetails, viewingDate);
+      const movieDetails = await fetchDetailsFromOmdb(
+        createMovieDto.title,
+        this.OMDB_APIKEY,
+      );
+      const newMovie = this.buildNewMoviePayload(
+        createMovieDto,
+        movieDetails,
+        viewingDate,
+      );
       return await this.postNewMovie(newMovie, apikey);
     } catch (e) {
       await sendEvent('create_movie_failed', createMovieDto.title);
@@ -36,14 +42,26 @@ export class MoviesService {
   }
 
   private calculateViewingDate(createMovieDto: CreateMovieDto): Date {
-    let viewingDate = new Date(createMovieDto.date || createMovieDto.startDate || Date.now());
-    if (!_.isEmpty(createMovieDto.startDate) && _.isEmpty(createMovieDto.date)) {
-      viewingDate = this.randomDate(new Date(createMovieDto.startDate), createMovieDto.endDate);
+    let viewingDate = new Date(
+      createMovieDto.date || createMovieDto.startDate || Date.now(),
+    );
+    if (
+      !_.isEmpty(createMovieDto.startDate) &&
+      _.isEmpty(createMovieDto.date)
+    ) {
+      viewingDate = this.randomDate(
+        new Date(createMovieDto.startDate),
+        createMovieDto.endDate,
+      );
     }
     return viewingDate;
   }
 
-  private buildNewMoviePayload(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
+  private buildNewMoviePayload(
+    createMovieDto: CreateMovieDto,
+    movieDetails: any,
+    viewingDate: Date,
+  ): any {
     return {
       title: movieDetails.Title,
       description: movieDetails.Plot,
@@ -63,7 +81,11 @@ export class MoviesService {
         apiKey: apikey,
       },
     };
-    const response = await axios.post('https://api.ashish.me/movies', newMovie, config);
+    const response = await axios.post(
+      'https://api.ashish.me/movies',
+      newMovie,
+      config,
+    );
     return response.data;
   }
 }

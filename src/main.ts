@@ -6,13 +6,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-  .addApiKey({type: 'apiKey', name: 'apiKey', in: 'header'}, 'apiKey')
-  .setTitle('Jobs API')
-  .setVersion('1.0')
-  .addTag('jobs')
-  .build();
-const document = SwaggerModule.createDocument(app, config);
-SwaggerModule.setup('api', app, document);
+    .addApiKey({ type: 'apiKey', name: 'apiKey', in: 'header' }, 'apiKey')
+    .setTitle('Jobs API')
+    .setVersion('1.0')
+    .addTag('jobs')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(3000);
 }
