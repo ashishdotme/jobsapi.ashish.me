@@ -1,4 +1,4 @@
-import { Controller, Request, Post, Body, Query } from '@nestjs/common';
+import { Controller, Request, Post, Body, Query, BadRequestException } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -14,9 +14,12 @@ export class MoviesController {
   create(
     @Request() req,
     @Body() createMovieDto: CreateMovieDto,
-    @Query('apikey') apiKeyParam: number,
+    @Query('apikey') apiKeyParam: string,
   ) {
     const apiKey = apiKeyParam || req.headers.apikey;
+    if(!apiKey){
+      return { error: 'Apikey cannot be blank' };
+    }
     return this.moviesService.create(createMovieDto, apiKey);
   }
 }

@@ -29,6 +29,13 @@ export class MoviesService {
         createMovieDto.title,
         this.OMDB_APIKEY,
       );
+
+      if(!movieDetails){
+        await sendEvent('create_movie_failed', createMovieDto.title);
+      }
+
+      
+
       const newMovie = this.buildNewMoviePayload(
         createMovieDto,
         movieDetails,
