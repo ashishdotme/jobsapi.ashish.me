@@ -31,11 +31,6 @@ export class MoviesService {
       );
       let moviePayload = {}
 
-      moviePayload = this.buildNewMoviePayloadFromImdb(
-        createMovieDto,
-        movieDetails,
-        viewingDate,
-      );
 
       if(!movieDetails){
         movieDetails = await fetchDetailsFromOmdb(
@@ -43,6 +38,12 @@ export class MoviesService {
           this.OMDB_APIKEY,
         );
         moviePayload = this.buildNewMoviePayloadFromOmdb(
+          createMovieDto,
+          movieDetails,
+          viewingDate,
+        );
+      } else {
+        moviePayload = this.buildNewMoviePayloadFromImdb(
           createMovieDto,
           movieDetails,
           viewingDate,
