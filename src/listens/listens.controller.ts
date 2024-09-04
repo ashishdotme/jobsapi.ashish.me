@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Query, Request, Get, HttpCode } from '@nestjs/common';
 import { ListensService } from './listens.service';
-// import { CreateListenDto } from './dto/create-listen.dto';
+import { CreateListenDto } from './dto/create-listen.dto';
 import { ApiTags, ApiSecurity } from '@nestjs/swagger';
 import { ok } from 'assert';
 
@@ -14,7 +14,6 @@ export class ListensController {
   @HttpCode(200)
   validateToken(
     @Request() req,
-    @Body() createListeDto: any,
     @Query('apikey') apiKeyParam: string,
   ) {
     return {
@@ -27,9 +26,13 @@ export class ListensController {
   @Post("submit-listens")
   create(
     @Request() req,
-    @Body() createListeDto: any,
+    @Body() createListenDto: CreateListenDto,
     @Query('apikey') apiKeyParam: string,
   ) {
-    console.log(createListeDto)
+    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Token') {
+      const apiKey = req.headers.authorization.split(' ')[1];
+      return this.listensService.create(createListenDto, apiKey);
+    } 
+    
   }
 }
