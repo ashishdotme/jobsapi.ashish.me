@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { MoviesModule } from './movies/movies.module';
 import { ShowsModule } from './shows/shows.module';
 import { ConfigModule } from '@nestjs/config';
+import { ListensModule } from './listens/listens.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
     }),
     ShowsModule,
+    ListensModule,
   ],
   controllers: [AppController],
   providers: [AppService],
