@@ -3,7 +3,7 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import * as _ from 'lodash';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { sendEvent, fetchDetailsFromOmdb } from '../common/utils';
+import { sendEvent, fetchDetailsFromOmdb, fetchDetailsFromImdb } from '../common/utils';
 
 @Injectable()
 export class MoviesService {
@@ -25,21 +25,39 @@ export class MoviesService {
 
     const viewingDate = this.calculateViewingDate(createMovieDto);
     try {
-      const movieDetails = await fetchDetailsFromOmdb(
-        createMovieDto.title,
-        this.OMDB_APIKEY,
+
+      let movieDetails = await fetchDetailsFromImdb(
+        createMovieDto.title
       );
+      let moviePayload = {}
+
+
+      if(!movieDetails){
+        movieDetails = await fetchDetailsFromOmdb(
+          createMovieDto.title,
+          this.OMDB_APIKEY,
+        );
+        moviePayload = this.buildNewMoviePayloadFromOmdb(
+          createMovieDto,
+          movieDetails,
+          viewingDate,
+        );
+      } else {
+        moviePayload = this.buildNewMoviePayloadFromImdb(
+          createMovieDto,
+          movieDetails,
+          viewingDate,
+        );
+      }
+
 
       if (!movieDetails) {
         await sendEvent('create_movie_failed', createMovieDto.title);
+        return { error: `Failed to create movie - Movie not found` };
       }
 
-      const newMovie = this.buildNewMoviePayload(
-        createMovieDto,
-        movieDetails,
-        viewingDate,
-      );
-      return await this.postNewMovie(newMovie, apikey);
+      console.log(moviePayload)
+      return await this.postNewMovie(moviePayload, apikey);
     } catch (e) {
       await sendEvent('create_movie_failed', createMovieDto.title);
       return { error: `Failed to create movie - ${e.message}` };
@@ -62,7 +80,7 @@ export class MoviesService {
     return viewingDate;
   }
 
-  private buildNewMoviePayload(
+  private buildNewMoviePayloadFromOmdb(
     createMovieDto: CreateMovieDto,
     movieDetails: any,
     viewingDate: Date,
@@ -76,6 +94,24 @@ export class MoviesService {
       viewingDate: viewingDate,
       imdbRating: Number(_.get(movieDetails.Ratings[0], 'Value').split('/')[0]),
       imdbId: movieDetails.imdbID,
+      loved: createMovieDto.loved || true,
+    };
+  }
+
+  private buildNewMoviePayloadFromImdb(
+    createMovieDto: CreateMovieDto,
+    movieDetails: any,
+    viewingDate: Date,
+  ): any {
+    return {
+      title: movieDetails.title,
+      description: movieDetails.plot,
+      language: movieDetails.spokenLanguages[0].language,
+      year: Number(movieDetails.year),
+      genre: movieDetails.genre.join(", "),
+      viewingDate: viewingDate,
+      imdbRating: Number(movieDetails.rating.star),
+      imdbId: movieDetails.id,
       loved: createMovieDto.loved || true,
     };
   }
