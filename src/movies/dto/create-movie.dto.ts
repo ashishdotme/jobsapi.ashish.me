@@ -1,18 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateMovieDto {
-  @ApiProperty()
-  title: string;
+	@ApiProperty()
+	title: string;
 
-  @ApiProperty()
-  date?: string;
+	@ApiProperty()
+	date?: string;
 
-  @ApiProperty()
-  startDate?: string;
+	@ApiProperty()
+	startDate?: string;
 
-  @ApiProperty()
-  endDate?: string;
+	@ApiProperty()
+	endDate?: string;
 
-  @ApiProperty()
-  loved?: boolean;
+	@ApiProperty()
+	loved?: boolean;
 }
