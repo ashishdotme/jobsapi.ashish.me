@@ -11,7 +11,7 @@ export class TransactionsService {
       const category = transactionCategories.find((x) =>
         x.keywords.includes(createTransactionDto.merchant),
       );
-      if(!category){
+      if (!category) {
         await sendEvent(
           'create_transaction_failed',
           createTransactionDto.merchant,
