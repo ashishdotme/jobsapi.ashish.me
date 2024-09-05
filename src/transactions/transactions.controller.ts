@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Request,
-  Post,
-  Body,
-  Query,
-} from '@nestjs/common';
+import { Controller, Request, Post, Body, Query } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 

@@ -1,24 +1,56 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { transactionCategories } from '../data/categories'
+import { transactionCategories } from '../data/categories';
+import axios from 'axios';
+import { sendEvent } from 'src/common/utils';
+
 @Injectable()
 export class TransactionsService {
-  create(createTransactionDto: CreateTransactionDto, apikey: string) {
-    // "Charity":        0,
-    // "Saving":         1,
-    // "Housing":        2,
-    // "Utilities":      3,
-    // "Food":           4,
-    // "Clothing":       5,
-    // "Transportation": 6,
-    // "Medical/Health": 7,
-    // "Insurance":      8,
-    // "Personal":       9,
-    // "Recreation":     10,
-    // "Debts":          11,
-    const category = transactionCategories.find(x => x.keywords.includes(createTransactionDto.))
-    return 'This action adds a new transaction';
+  async create(createTransactionDto: CreateTransactionDto, apikey: string) {
+    try {
+      const category = transactionCategories.find((x) =>
+        x.keywords.includes(createTransactionDto.merchant),
+      );
+      const payload = this.buildNewTransactionPayload(
+        createTransactionDto,
+        category.name,
+      );
+      return await this.postNewTransaction(payload, apikey);
+    } catch (e) {
+      await sendEvent(
+        'create_transaction_failed',
+        createTransactionDto.merchant,
+      );
+      return { error: `Failed to create transaction - ${e.message}` };
+    }
   }
 
-  
+  private buildNewTransactionPayload(
+    createTransactionDto: CreateTransactionDto,
+    category: string,
+  ): any {
+    return {
+      amount: createTransactionDto.amount,
+      merchant: createTransactionDto.merchant,
+      category: category,
+      date: createTransactionDto.date || new Date(),
+    };
+  }
+
+  private async postNewTransaction(
+    newTransaction: any,
+    apikey: string,
+  ): Promise<any> {
+    const config = {
+      headers: {
+        apiKey: apikey,
+      },
+    };
+    const response = await axios.post(
+      'https://api.ashish.me/transactions',
+      newTransaction,
+      config,
+    );
+    return response.data;
+  }
 }

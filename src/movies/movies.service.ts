@@ -3,7 +3,11 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import * as _ from 'lodash';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { sendEvent, fetchDetailsFromOmdb, fetchDetailsFromImdb } from '../common/utils';
+import {
+  sendEvent,
+  fetchDetailsFromOmdb,
+  fetchDetailsFromImdb,
+} from '../common/utils';
 
 @Injectable()
 export class MoviesService {
@@ -25,14 +29,10 @@ export class MoviesService {
 
     const viewingDate = this.calculateViewingDate(createMovieDto);
     try {
+      let movieDetails = await fetchDetailsFromImdb(createMovieDto.title);
+      let moviePayload = {};
 
-      let movieDetails = await fetchDetailsFromImdb(
-        createMovieDto.title
-      );
-      let moviePayload = {}
-
-
-      if(!movieDetails){
+      if (!movieDetails) {
         movieDetails = await fetchDetailsFromOmdb(
           createMovieDto.title,
           this.OMDB_APIKEY,
@@ -50,13 +50,12 @@ export class MoviesService {
         );
       }
 
-
       if (!movieDetails) {
         await sendEvent('create_movie_failed', createMovieDto.title);
         return { error: `Failed to create movie - Movie not found` };
       }
 
-      console.log(moviePayload)
+      console.log(moviePayload);
       return await this.postNewMovie(moviePayload, apikey);
     } catch (e) {
       await sendEvent('create_movie_failed', createMovieDto.title);
@@ -108,7 +107,7 @@ export class MoviesService {
       description: movieDetails.plot,
       language: movieDetails.spokenLanguages[0].language,
       year: Number(movieDetails.year),
-      genre: movieDetails.genre.join(", "),
+      genre: movieDetails.genre.join(', '),
       viewingDate: viewingDate,
       imdbRating: Number(movieDetails.rating.star),
       imdbId: movieDetails.id,
