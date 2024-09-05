@@ -15,12 +15,12 @@ export class TransactionsController {
 		return this.transactionsService.create(createTransactionDto, apiKey);
 	}
 
-  @Get("total")
-  getTotal(@Request() req, @Query('apikey') apiKeyParam: string){
-    const apiKey = apiKeyParam || req.headers.apikey;
+	@Get('total')
+	getTotal(@Request() req, @Query('apikey') apiKeyParam: string) {
+		const apiKey = apiKeyParam || req.headers.apikey;
 		if (!apiKey) {
 			return { error: 'Apikey cannot be blank' };
 		}
-    return this.transactionsService.getTotal(apiKey);
-  }
+		return this.transactionsService.getTotal(apiKey);
+	}
 }
