@@ -9,25 +9,37 @@ import * as _ from 'remeda';
 export class TransactionsService {
   async create(createTransactionDto: CreateTransactionDto, apikey: string) {
     try {
-      const category = transactionCategories.find((x) =>
-        x.keywords.includes(createTransactionDto.merchant),
-      );
-      if (!category) {
+
+      const amount = createTransactionDto.transaction.slice(0,  createTransactionDto.transaction.indexOf(" "))
+      const merchant = createTransactionDto.transaction.slice(createTransactionDto.transaction.indexOf(" "),  createTransactionDto.transaction.length).trim();
+      
+      if (!merchant || !amount) {
         await sendEvent(
           'create_transaction_failed',
-          createTransactionDto.merchant,
+          createTransactionDto.transaction,
         );
         return { error: `Failed to create transaction` };
       }
-      const payload = this.buildNewTransactionPayload(
-        createTransactionDto,
-        category.name,
-      );
+
+      let category = transactionCategories.find((x) =>
+        x.keywords.includes(merchant),
+      ).name;
+
+      if (!category) {
+        category = "Miscellaneous"
+      }
+
+      const payload = {
+        amount: Number(amount),
+        merchant: _.capitalize(merchant),
+        category: _.capitalize(category),
+        date: createTransactionDto.date || new Date(),
+      }
       return await this.postNewTransaction(payload, apikey);
     } catch (e) {
       await sendEvent(
         'create_transaction_failed',
-        createTransactionDto.merchant,
+        createTransactionDto.transaction,
       );
       return { error: `Failed to create transaction - ${e.message}` };
     }
