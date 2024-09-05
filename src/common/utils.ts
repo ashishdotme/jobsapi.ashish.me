@@ -1,7 +1,7 @@
-import axios from "axios";
+import axios from 'axios';
 
 export const sendEvent = async (type: string, message: string): Promise<void> => {
-	await axios.post("https://api.ashish.me/events", {
+	await axios.post('https://api.ashish.me/events', {
 		type,
 		message,
 	});
@@ -18,7 +18,7 @@ export const fetchDetailsFromOmdb = async (title: string, omdbApiKey): Promise<a
 
 export const fetchDetailsFromImdb = async (title: string): Promise<any> => {
 	try {
-		const response = await axios.get(`https://imdb.ashish.me/search?query=${title.replace(" ", "%20")}`);
+		const response = await axios.get(`https://imdb.ashish.me/search?query=${title.replace(' ', '%20')}`);
 
 		if (!response.data) {
 			throw new Error(`Failed to fetch details from IMDB - Not found`);

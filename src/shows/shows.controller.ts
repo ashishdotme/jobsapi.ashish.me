@@ -1,8 +1,8 @@
-import { Controller, Post, Body, Request } from "@nestjs/common";
-import { ShowsService } from "./shows.service";
-import { CreateShowDto } from "./dto/create-show.dto";
+import { Controller, Post, Body, Request } from '@nestjs/common';
+import { ShowsService } from './shows.service';
+import { CreateShowDto } from './dto/create-show.dto';
 
-@Controller("shows")
+@Controller('shows')
 export class ShowsController {
 	constructor(private readonly showsService: ShowsService) {}
 

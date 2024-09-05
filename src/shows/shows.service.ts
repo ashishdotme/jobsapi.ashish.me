@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { CreateShowDto } from "./dto/create-show.dto";
-import { ConfigService } from "@nestjs/config";
-import axios from "axios";
-import { sendEvent, fetchDetailsFromOmdb } from "../common/utils";
+import { Injectable } from '@nestjs/common';
+import { CreateShowDto } from './dto/create-show.dto';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
+import { sendEvent, fetchDetailsFromOmdb } from '../common/utils';
 
 @Injectable()
 export class ShowsService {
-	private OMDB_APIKEY: string = this.configService.get<string>("OMDB");
+	private OMDB_APIKEY: string = this.configService.get<string>('OMDB');
 
 	constructor(private configService: ConfigService) {}
 
@@ -21,12 +21,12 @@ export class ShowsService {
 			seasonNumber: createShowDto.seasonNumber,
 			showName: showDetails.Title,
 			description: showDetails.Plot,
-			language: "English",
-			year: Number(showDetails.Year.includes("–") ? showDetails.Year.split("–")[0] : showDetails.Year),
+			language: 'English',
+			year: Number(showDetails.Year.includes('–') ? showDetails.Year.split('–')[0] : showDetails.Year),
 			genre: showDetails.Genre,
 			startedDate: viewingDate,
-			status: "Started",
-			imdbRating: Number(showDetails.Ratings?.[0]?.Value?.split("/")[0] ?? 0),
+			status: 'Started',
+			imdbRating: Number(showDetails.Ratings?.[0]?.Value?.split('/')[0] ?? 0),
 			imdbId: showDetails.imdbID,
 			loved: createShowDto.loved || true,
 		};
@@ -34,7 +34,7 @@ export class ShowsService {
 
 	async create(createShowDto: CreateShowDto, headers: any) {
 		if (!createShowDto.title) {
-			return { error: "Title cannot be blank" };
+			return { error: 'Title cannot be blank' };
 		}
 		let viewingDate = createShowDto.date ? new Date(createShowDto.date) : new Date();
 		let showDetails: any;
@@ -42,7 +42,7 @@ export class ShowsService {
 		try {
 			showDetails = await fetchDetailsFromOmdb(createShowDto.title, this.OMDB_APIKEY);
 		} catch (error) {
-			await sendEvent("create_show_failed", createShowDto.title);
+			await sendEvent('create_show_failed', createShowDto.title);
 			return { error: error.message };
 		}
 		if (!createShowDto.date && createShowDto.startDate) {
@@ -57,11 +57,11 @@ export class ShowsService {
 					apiKey: headers.apikey,
 				},
 			};
-			const showCreated = await axios.post("https://api.ashish.me/shows", shoywPayload, config);
+			const showCreated = await axios.post('https://api.ashish.me/shows', shoywPayload, config);
 			return showCreated.data;
 		} catch (error) {
 			console.log(error);
-			await sendEvent("create_show_failed", createShowDto.title);
+			await sendEvent('create_show_failed', createShowDto.title);
 		}
 	}
 }

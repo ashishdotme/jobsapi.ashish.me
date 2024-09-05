@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import axios from "axios";
-import { CreateListenDto } from "./dto/create-listen.dto";
-import { sendEvent } from "src/common/utils";
+import { Injectable } from '@nestjs/common';
+import axios from 'axios';
+import { CreateListenDto } from './dto/create-listen.dto';
+import { sendEvent } from 'src/common/utils';
 
 @Injectable()
 export class ListensService {
@@ -10,7 +10,7 @@ export class ListensService {
 			const payload = this.buildNewListenPayload(createListenDto);
 			return await this.postNewListen(payload, apikey);
 		} catch (e) {
-			await sendEvent("create_listen_failed", createListenDto.payload[0].track_metadata.track_name);
+			await sendEvent('create_listen_failed', createListenDto.payload[0].track_metadata.track_name);
 			return { error: `Failed to create listen - ${e.message}` };
 		}
 	}
@@ -30,7 +30,7 @@ export class ListensService {
 				apiKey: apikey,
 			},
 		};
-		const response = await axios.post("https://api.ashish.me/listens", newListen, config);
+		const response = await axios.post('https://api.ashish.me/listens', newListen, config);
 		return response.data;
 	}
 }
