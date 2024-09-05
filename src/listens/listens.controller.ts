@@ -1,8 +1,7 @@
-import { Controller, Post, Body, Query, Request, Get, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Request, Get, HttpCode } from '@nestjs/common';
 import { ListensService } from './listens.service';
 import { CreateListenDto } from './dto/create-listen.dto';
 import { ApiTags, ApiSecurity } from '@nestjs/swagger';
-import { ok } from 'assert';
 
 @Controller('/1')
 @ApiTags('listens')
@@ -10,29 +9,24 @@ import { ok } from 'assert';
 export class ListensController {
   constructor(private readonly listensService: ListensService) {}
 
-  @Get("validate-token")
+  @Get('validate-token')
   @HttpCode(200)
-  validateToken(
-    @Request() req,
-    @Query('apikey') apiKeyParam: string,
-  ) {
+  validateToken() {
     return {
-			code: 200,
-			message: 'Token valid',
-			valid: true
-		}
+      code: 200,
+      message: 'Token valid',
+      valid: true,
+    };
   }
 
-  @Post("submit-listens")
-  create(
-    @Request() req,
-    @Body() createListenDto: CreateListenDto,
-    @Query('apikey') apiKeyParam: string,
-  ) {
-    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Token') {
+  @Post('submit-listens')
+  create(@Request() req, @Body() createListenDto: CreateListenDto) {
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.split(' ')[0] === 'Token'
+    ) {
       const apiKey = req.headers.authorization.split(' ')[1];
       return this.listensService.create(createListenDto, apiKey);
-    } 
-    
+    }
   }
 }

@@ -24,19 +24,17 @@ export const fetchDetailsFromOmdb = async (
   }
 };
 
-export const fetchDetailsFromImdb = async (
-  title: string
-): Promise<any> => {
+export const fetchDetailsFromImdb = async (title: string): Promise<any> => {
   try {
     const response = await axios.get(
-      `https://imdb.ashish.me/search?query=${title.replace(" ", "%20")}`,
+      `https://imdb.ashish.me/search?query=${title.replace(' ', '%20')}`,
     );
 
-    if(!response.data){
+    if (!response.data) {
       throw new Error(`Failed to fetch details from IMDB - Not found`);
     }
 
-    const imdbId = response.data.results[0].id
+    const imdbId = response.data.results[0].id;
     const finalResponse = await axios.get(
       `https://imdb.ashish.me/title/${imdbId.trim()}`,
     );
@@ -45,4 +43,3 @@ export const fetchDetailsFromImdb = async (
     throw new Error(`Failed to fetch details from IMDB - ${error}`);
   }
 };
-
