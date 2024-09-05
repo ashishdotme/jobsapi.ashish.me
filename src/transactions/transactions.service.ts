@@ -52,18 +52,6 @@ export class TransactionsService {
     }
   }
 
-  private buildNewTransactionPayload(
-    createTransactionDto: CreateTransactionDto,
-    category: string,
-  ): any {
-    return {
-      amount: createTransactionDto.amount,
-      merchant: _.capitalize(createTransactionDto.merchant),
-      category: _.capitalize(category),
-      date: createTransactionDto.date || new Date(),
-    };
-  }
-
   private async postNewTransaction(
     newTransaction: any,
     apikey: string,
