@@ -9,10 +9,17 @@ import * as _ from 'remeda';
 export class TransactionsService {
   async create(createTransactionDto: CreateTransactionDto, apikey: string) {
     try {
+      const amount = createTransactionDto.transaction.slice(
+        0,
+        createTransactionDto.transaction.indexOf(' '),
+      );
+      const merchant = createTransactionDto.transaction
+        .slice(
+          createTransactionDto.transaction.indexOf(' '),
+          createTransactionDto.transaction.length,
+        )
+        .trim();
 
-      const amount = createTransactionDto.transaction.slice(0,  createTransactionDto.transaction.indexOf(" "))
-      const merchant = createTransactionDto.transaction.slice(createTransactionDto.transaction.indexOf(" "),  createTransactionDto.transaction.length).trim();
-      
       if (!merchant || !amount) {
         await sendEvent(
           'create_transaction_failed',
@@ -26,7 +33,7 @@ export class TransactionsService {
       ).name;
 
       if (!category) {
-        category = "Miscellaneous"
+        category = 'Miscellaneous';
       }
 
       const payload = {
@@ -34,7 +41,7 @@ export class TransactionsService {
         merchant: _.capitalize(merchant),
         category: _.capitalize(category),
         date: createTransactionDto.date || new Date(),
-      }
+      };
       return await this.postNewTransaction(payload, apikey);
     } catch (e) {
       await sendEvent(
