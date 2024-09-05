@@ -3,6 +3,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { transactionCategories } from '../data/categories';
 import axios from 'axios';
 import { sendEvent } from 'src/common/utils';
+import * as _ from "remeda";
 
 @Injectable()
 export class TransactionsService {
@@ -16,7 +17,7 @@ export class TransactionsService {
           'create_transaction_failed',
           createTransactionDto.merchant,
         );
-        return { error: `Failed to create transaction - ${e.message}` };
+        return { error: `Failed to create transaction` };
       }
       const payload = this.buildNewTransactionPayload(
         createTransactionDto,
@@ -38,8 +39,8 @@ export class TransactionsService {
   ): any {
     return {
       amount: createTransactionDto.amount,
-      merchant: createTransactionDto.merchant,
-      category: category,
+      merchant: _.capitalize(createTransactionDto.merchant),
+      category: _.capitalize(category),
       date: createTransactionDto.date || new Date(),
     };
   }
