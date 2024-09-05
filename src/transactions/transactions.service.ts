@@ -7,6 +7,27 @@ import * as _ from 'remeda';
 
 @Injectable()
 export class TransactionsService {
+
+  async getTotal(apiKey: any) {
+    const transactions = await this.getTransactions(apiKey);
+    let total = 0
+    transactions.forEach( x => {
+      total += Number(x.amount); 
+    });
+    const categories = {
+
+   };
+   transactions.forEach( x => {
+    if (categories[x.category]) {
+      categories[x.category]+= Number(x.amount)
+  } else {
+    categories[x.category] = Number(x.amount)
+  }
+   })
+
+    return {total: total.toFixed(2), categories}
+  }
+
 	async create(createTransactionDto: CreateTransactionDto, apikey: string) {
 		try {
 			const amount = createTransactionDto.transaction.slice(0, createTransactionDto.transaction.indexOf(' '));
@@ -44,6 +65,16 @@ export class TransactionsService {
 			},
 		};
 		const response = await axios.post('https://api.ashish.me/transactions', newTransaction, config);
+		return response.data;
+	}
+
+  private async getTransactions(apikey: string): Promise<any> {
+		const config = {
+			headers: {
+				apiKey: apikey,
+			},
+		};
+		const response = await axios.get('https://api.ashish.me/transactions', config);
 		return response.data;
 	}
 }
