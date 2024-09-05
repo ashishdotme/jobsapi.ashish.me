@@ -3,7 +3,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { transactionCategories } from '../data/categories';
 import axios from 'axios';
 import { sendEvent } from 'src/common/utils';
-import * as _ from "remeda";
+import * as _ from 'remeda';
 
 @Injectable()
 export class TransactionsService {
