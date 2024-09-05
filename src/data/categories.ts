@@ -24,6 +24,9 @@ export const transactionCategories = [
       'crossaint',
       'ice cream',
       'waffle',
+      "bread 41",
+      'supermac',
+      "bubble tea"
     ],
   },
   {
@@ -64,6 +67,6 @@ export const transactionCategories = [
   },
   {
     name: 'Grocery',
-    keywords: ['aldi', 'tesco', 'lidl', 'centra', 'near buy', 'dunnes'],
+    keywords: ['aldi', 'tesco', 'lidl', 'centra', 'near buy', 'dunnes', 'milk'],
   },
 ];
