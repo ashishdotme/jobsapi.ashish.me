@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Request,
-  Get,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Post, Body, Request, Get, HttpCode } from '@nestjs/common';
 import { ListensService } from './listens.service';
 import { CreateListenDto } from './dto/create-listen.dto';
 import { ApiTags, ApiSecurity } from '@nestjs/swagger';
