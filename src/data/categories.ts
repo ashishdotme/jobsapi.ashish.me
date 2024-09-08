@@ -4,6 +4,10 @@ export const transactionCategories = [
 		keywords: ['charity'],
 	},
 	{
+		name: 'Travel',
+		keywords: ['entry ticket'],
+	},
+	{
 		name: 'Saving',
 		keywords: ['saving'],
 	},
@@ -17,7 +21,7 @@ export const transactionCategories = [
 	},
 	{
 		name: 'Food',
-		keywords: ['mcdonalds', 'coffee', 'pizza', 'crossaint', 'ice cream', 'waffle', 'bread 41', 'supermac', 'bubble tea'],
+		keywords: ['mcdonalds', 'coffee', 'pizza', 'crossaint', 'ice cream', 'waffle', 'bread 41', 'supermac', 'bubble tea', 'yalla', 'chicken kebab'],
 	},
 	{
 		name: 'Clothing',
@@ -57,6 +61,6 @@ export const transactionCategories = [
 	},
 	{
 		name: 'Grocery',
-		keywords: ['aldi', 'tesco', 'lidl', 'centra', 'near buy', 'dunnes', 'milk'],
+		keywords: ['aldi', 'tesco', 'lidl', 'centra', 'near buy', 'dunnes', 'milk', 'indian'],
 	},
 ];
