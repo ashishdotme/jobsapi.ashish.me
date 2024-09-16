@@ -6,6 +6,7 @@ import { ShowsModule } from './shows/shows.module';
 import { ConfigModule } from '@nestjs/config';
 import { ListensModule } from './listens/listens.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { WikiModule } from './wiki/wiki.module';
 
 @Module({
 	imports: [
@@ -16,6 +17,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 		ShowsModule,
 		ListensModule,
 		TransactionsModule,
+		WikiModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
