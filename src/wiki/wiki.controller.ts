@@ -8,7 +8,7 @@ export class WikiController {
 
 	@Post()
 	create(@Request() req, @Body() createWikiDto: CreateWikiDto, @Query('apikey') apiKeyParam: string) {
-    console.log('createWikiDto', createWikiDto);
+		console.log('createWikiDto', createWikiDto);
 		const apiKey = apiKeyParam || req.headers.apikey;
 		if (!apiKey) {
 			return { error: 'Apikey cannot be blank' };
