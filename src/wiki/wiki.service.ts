@@ -7,7 +7,6 @@ export class WikiService {
 	async create(createWikiDto: any, apikey: string) {
 		try {
 			const payload = this.buildNewWkiPayload(createWikiDto);
-			console.log('payload', payload);
 			return await this.postNewWki(payload, apikey);
 		} catch (e) {
 			await sendEvent('create_memo_failed', createWikiDto.memo.content);
@@ -30,7 +29,6 @@ export class WikiService {
 			},
 		};
 		const response = await axios.post('https://api.ashish.me/wiki', newWki, config);
-		console.log('response', response);
 		return response.data;
 	}
 }
