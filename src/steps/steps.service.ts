@@ -7,7 +7,7 @@ import { CreateStepDto } from './dto/create-step.dto';
 export class StepsService {
 	async create(createStepDto: CreateStepDto, apiKey: string) {
 		const newStep = {
-			stepCount: createStepDto.data.metrics[0].data[0].qty,
+			stepCount: createStepDto.data.metrics[0].data[0].qty.toFixed(),
 			date: format(new Date(createStepDto.data.metrics[0].data[0].date), 'M/d/yy'),
 			fullDate: new Date(createStepDto.data.metrics[0].data[0].date),
 		};
