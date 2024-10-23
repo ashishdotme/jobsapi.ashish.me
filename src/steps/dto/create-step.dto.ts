@@ -1,10 +1,18 @@
 export class CreateStepDto {
-	data: Data[];
-	name: string;
-	units: string;
+	data: Data;
 }
 
 export class Data {
+	metrics: Metric[];
+}
+
+export class Metric {
+	name: string;
+	data: Daum[];
+	units: string;
+}
+
+export class Daum {
 	asleep?: number;
 	awake?: number;
 	core?: number;

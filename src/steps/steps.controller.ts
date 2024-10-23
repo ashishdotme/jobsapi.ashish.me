@@ -7,7 +7,7 @@ export class StepsController {
 	constructor(private readonly stepsService: StepsService) {}
 
 	@Post()
-	create(@Request() req, @Body() createStepDto: CreateStepDto[], @Query('apikey') apiKeyParam: string) {
+	create(@Request() req, @Body() createStepDto: any, @Query('apikey') apiKeyParam: string) {
 		const apiKey = apiKeyParam || req.headers.apikey;
 		if (!apiKey) {
 			return { error: 'Apikey cannot be blank' };

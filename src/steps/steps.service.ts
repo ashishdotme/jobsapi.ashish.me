@@ -5,8 +5,8 @@ import { CreateStepDto } from './dto/create-step.dto';
 
 @Injectable()
 export class StepsService {
-	async create(createStepDto: CreateStepDto[], apiKey: string) {
-		const steps = createStepDto.find(data => data.name === 'step_count');
+	async create(createStepDto: CreateStepDto, apiKey: string) {
+		const steps = createStepDto.data.metrics.find(data => data.name === 'step_count');
 		for (const step of steps.data) {
 			const newStep = {
 				stepCount: step.qty.toFixed(),
