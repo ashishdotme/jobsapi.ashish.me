@@ -18,12 +18,17 @@ export class StepsService {
 		return HttpStatus.OK;
 	}
 	private async postSteps(newMovie: any, apikey: string): Promise<any> {
-		const config = {
-			headers: {
-				apikey: apikey,
-			},
-		};
-		const response = await axios.post('https://api.ashish.me/steps', newMovie, config);
-		return response.data;
+		// use try catch block to handle errors
+		try {
+			const config = {
+				headers: {
+					apikey: apikey,
+				},
+			};
+			const response = await axios.post('https://api.ashish.me/steps', newMovie, config);
+			return response.data;
+		} catch (error) {	
+			console.error(error);
+		}
 	}
 }
