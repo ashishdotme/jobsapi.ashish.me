@@ -1,6 +1,5 @@
-export type CreateStepDto = Metric[];
 
-export class Metric {
+export class CreateStepDto {
 	data: Data[];
 	name: string;
 	units: string;
