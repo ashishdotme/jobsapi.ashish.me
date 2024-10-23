@@ -12,7 +12,7 @@ export class StepsController {
 		if (!apiKey) {
 			return { error: 'Apikey cannot be blank' };
 		}
-		console.log(createStepDto);
+		console.log(JSON.stringify(createStepDto));
 		return this.stepsService.create(createStepDto, apiKey);
 	}
 }
