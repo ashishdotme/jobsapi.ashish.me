@@ -1,19 +1,23 @@
-export class CreateStepDto {
-	data: Data;
+export type CreateStepDto = Metric[]
+
+export class Metric {
+  data: Data[]
+  name: string
+  units: string
 }
 
 export class Data {
-	metrics: Metric[];
-}
-
-export class Metric {
-	units: string;
-	name: string;
-	data: Daum[];
-}
-
-export class Daum {
-	source: string;
-	date: string;
-	qty: number;
+  asleep?: number
+  awake?: number
+  core?: number
+  date: string
+  deep?: number
+  inBed?: number
+  inBedEnd?: string
+  inBedStart?: string
+  rem?: number
+  sleepEnd?: string
+  sleepStart?: string
+  source: string
+  qty?: number
 }
