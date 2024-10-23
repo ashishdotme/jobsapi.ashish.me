@@ -27,7 +27,7 @@ export class StepsService {
 			};
 			const response = await axios.post('https://api.ashish.me/steps', newMovie, config);
 			return response.data;
-		} catch (error) {	
+		} catch (error) {
 			console.error(error);
 		}
 	}
