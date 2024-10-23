@@ -1,6 +1,5 @@
 import { Controller, Post, Request, Body, Query } from '@nestjs/common';
 import { StepsService } from './steps.service';
-import { CreateStepDto } from './dto/create-step.dto';
 
 @Controller('steps')
 export class StepsController {
