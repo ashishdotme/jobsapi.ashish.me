@@ -4,19 +4,19 @@ import axios from 'axios';
 
 @Injectable()
 export class LocationsService {
-  async create(createLocationDto: CreateLocationDto, apiKey: string) {
-    const location = createLocationDto.locations[createLocationDto.locations.length - 1];
-    const newLocation = {
-      batteryLevel: location.properties.battery_level,
-      batteryState: location.properties.battery_state,
-      coordinates: location.geometry.coordinates,
-      timestamp: location.properties.timestamp,
-    }
-    await this.postLocation(newLocation, apiKey);
+	async create(createLocationDto: CreateLocationDto, apiKey: string) {
+		const location = createLocationDto.locations[createLocationDto.locations.length - 1];
+		const newLocation = {
+			batteryLevel: location.properties.battery_level,
+			batteryState: location.properties.battery_state,
+			coordinates: location.geometry.coordinates,
+			timestamp: location.properties.timestamp,
+		};
+		await this.postLocation(newLocation, apiKey);
 		return HttpStatus.OK;
-  }
+	}
 
-  private async postLocation(newLocation: any, apikey: string): Promise<any> {
+	private async postLocation(newLocation: any, apikey: string): Promise<any> {
 		try {
 			const config = {
 				headers: {

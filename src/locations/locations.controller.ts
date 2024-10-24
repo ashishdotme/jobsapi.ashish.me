@@ -8,7 +8,7 @@ export class LocationsController {
 
 	@Post()
 	create(@Request() req, @Body() createLocationDto: CreateLocationDto, @Query('apikey') apiKeyParam: string) {
-    const apiKey = apiKeyParam || req.headers.apikey;
+		const apiKey = apiKeyParam || req.headers.apikey;
 		if (!apiKey) {
 			return { error: 'Apikey cannot be blank' };
 		}
