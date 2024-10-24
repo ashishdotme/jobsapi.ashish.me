@@ -1,4 +1,4 @@
-export class CreateStepDto {
+export class CreateMetricDto {
 	data: Data;
 }
 

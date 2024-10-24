@@ -7,7 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ListensModule } from './listens/listens.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { WikiModule } from './wiki/wiki.module';
-import { StepsModule } from './steps/steps.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
 	imports: [
@@ -19,7 +19,7 @@ import { StepsModule } from './steps/steps.module';
 		ListensModule,
 		TransactionsModule,
 		WikiModule,
-		StepsModule,
+		MetricsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
