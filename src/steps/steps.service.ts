@@ -13,6 +13,7 @@ export class StepsService {
 				date: format(step.date, 'M/d/yy'),
 				fullDate: new Date(step.date),
 			};
+			console.log(newStep);
 			await this.postSteps(newStep, apiKey);
 		}
 		return HttpStatus.OK;
