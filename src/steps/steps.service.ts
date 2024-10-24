@@ -10,7 +10,7 @@ export class StepsService {
 		for (const step of steps.data) {
 			const newStep = {
 				stepCount: step.qty.toFixed(),
-				date: format(new Date(step.date), 'M/d/yy'),
+				date: format(new Date(step.date), 'M/D/YY'),
 				fullDate: new Date(step.date),
 			};
 			await this.postSteps(newStep, apiKey);
