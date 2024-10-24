@@ -8,6 +8,7 @@ import { ListensModule } from './listens/listens.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { WikiModule } from './wiki/wiki.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
 	imports: [
@@ -20,6 +21,7 @@ import { MetricsModule } from './metrics/metrics.module';
 		TransactionsModule,
 		WikiModule,
 		MetricsModule,
+		LocationsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
