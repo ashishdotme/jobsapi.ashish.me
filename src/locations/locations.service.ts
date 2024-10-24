@@ -13,6 +13,7 @@ export class LocationsService {
 			coordinates: location.geometry.coordinates,
 			timestamp: location.properties.timestamp,
 		};
+    console.log(newLocation)
 		await this.postLocation(newLocation, apiKey);
 		return HttpStatus.OK;
 	}
