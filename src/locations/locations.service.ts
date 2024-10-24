@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import axios from 'axios';
 
@@ -15,7 +15,7 @@ export class LocationsService {
 		};
 		console.log(newLocation);
 		await this.postLocation(newLocation, apiKey);
-		return HttpStatus.OK;
+		return { result: 'ok' };
 	}
 
 	private async postLocation(newLocation: any, apikey: string): Promise<any> {
