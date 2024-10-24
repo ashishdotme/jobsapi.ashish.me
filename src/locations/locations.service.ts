@@ -6,7 +6,7 @@ import axios from 'axios';
 export class LocationsService {
 	async create(createLocationDto: CreateLocationDto, apiKey: string) {
 		const location = createLocationDto.locations[createLocationDto.locations.length - 1];
-		const level = Math.round(location.properties.battery_level) * 100;
+		const level = location.properties.battery_level * 100;
 		const newLocation = {
 			batteryLevel: level,
 			batteryState: location.properties.battery_state,
