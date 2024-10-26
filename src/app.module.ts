@@ -9,6 +9,8 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { WikiModule } from './wiki/wiki.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { LocationsModule } from './locations/locations.module';
+import { TasksModule } from './tasks/tasks.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
 	imports: [
@@ -16,12 +18,14 @@ import { LocationsModule } from './locations/locations.module';
 		ConfigModule.forRoot({
 			isGlobal: true,
 		}),
+		ScheduleModule.forRoot(),
 		ShowsModule,
 		ListensModule,
 		TransactionsModule,
 		WikiModule,
 		MetricsModule,
 		LocationsModule,
+		TasksModule
 	],
 	controllers: [AppController],
 	providers: [AppService],
