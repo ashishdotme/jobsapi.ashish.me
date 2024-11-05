@@ -18,7 +18,7 @@ export class MetricsService {
 		const sleepMetrics = createMetricDto.data.metrics.find(data => data.name === 'sleep_analysis');
 		for (const sleep of sleepMetrics.data) {
 			const newMetric = {
-				sleep: sleep.inBed,
+				sleep: Number(sleep.inBed).toFixed(2),
 				date: format(sleep.date.split(' ')[0], 'M/d/yy'),
 				fullDate: new Date(sleep.date.split(' ')[0]),
 				sleepStart: sleep.sleepStart,
