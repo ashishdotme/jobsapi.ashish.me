@@ -25,7 +25,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 		WikiModule,
 		MetricsModule,
 		LocationsModule,
-		TasksModule
+		TasksModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

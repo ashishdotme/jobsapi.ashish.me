@@ -24,6 +24,7 @@ export class MetricsService {
 				sleepStart: sleep.sleepStart,
 				sleepEnd: sleep.sleepEnd,
 			};
+			console.log(newMetric);
 			await this.postSleep(newMetric, apiKey);
 		}
 		return HttpStatus.OK;
