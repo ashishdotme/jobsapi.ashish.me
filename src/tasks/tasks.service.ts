@@ -17,7 +17,6 @@ export class TasksService {
 		const ticktickReponse = await this.ticktickApi.getTasks();
 		const ticktickTasks: Task[] = ticktickReponse.tasks;
 		const todos = await axios.get('https://api.ashish.me/todos/incomplete');
-		//iterate ticktick tasks
 		for (const ticktickTask of ticktickTasks) {
 			try {
 				const isCreated = todos.data.find(x => x.content == ticktickTask.title);
