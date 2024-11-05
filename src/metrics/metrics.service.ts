@@ -9,7 +9,7 @@ export class MetricsService {
 		const stepsMetrics = createMetricDto.data.metrics.find(data => data.name === 'step_count');
 		for (const step of stepsMetrics.data) {
 			const newMetric = {
-				stepCount: Number(Number(step.qty).toFixed(2)),
+				stepCount: step.qty.toFixed(),
 				date: format(step.date.split(' ')[0], 'M/d/yy'),
 				fullDate: new Date(step.date.split(' ')[0]),
 			};
