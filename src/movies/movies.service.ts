@@ -23,13 +23,11 @@ export class MoviesService {
 
 		const viewingDate = this.calculateViewingDate(createMovieDto);
 		try {
-			let movieDetails = await fetchDetailsFromImdb(createMovieDto.title);
-			let moviePayload = {};
+			let movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
+			let	moviePayload = this.buildNewMoviePayloadFromOmdb(createMovieDto, movieDetails, viewingDate);
 
 			if (!movieDetails) {
-				movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
-				moviePayload = this.buildNewMoviePayloadFromOmdb(createMovieDto, movieDetails, viewingDate);
-			} else {
+				movieDetails = await fetchDetailsFromImdb(createMovieDto.title);
 				moviePayload = this.buildNewMoviePayloadFromImdb(createMovieDto, movieDetails, viewingDate);
 			}
 
