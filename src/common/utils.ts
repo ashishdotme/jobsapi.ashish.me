@@ -12,7 +12,8 @@ export const fetchDetailsFromOmdb = async (title: string, omdbApiKey): Promise<a
 		const response = await axios.get(`http://www.omdbapi.com/?t=${title}&apikey=${omdbApiKey}`);
 		return response.data;
 	} catch (error) {
-		throw new Error(`Failed to fetch details from OMDB - ${error}`);
+		return null
+		//throw new Error(`Failed to fetch details from OMDB - ${error}`);
 	}
 };
 
@@ -30,6 +31,7 @@ export const fetchDetailsFromImdb = async (title: string): Promise<any> => {
 		finalResponse.data.year = year;
 		return finalResponse.data;
 	} catch (error) {
-		throw new Error(`Failed to fetch details from IMDB - ${error}`);
+		return null
+		//throw new Error(`Failed to fetch details from IMDB - ${error}`);
 	}
 };
