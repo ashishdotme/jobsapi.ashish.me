@@ -27,7 +27,7 @@ export const fetchDetailsFromImdb = async (title: string): Promise<any> => {
 		const imdbId = response.data.results[0].id;
 		const year = response.data.results[0].year;
 		const finalResponse = await axios.get(`https://imdb.ashish.me/title/${imdbId.trim()}`);
-		finalResponse.year = year;
+		finalResponse.data.year = year;
 		return finalResponse.data;
 	} catch (error) {
 		throw new Error(`Failed to fetch details from IMDB - ${error}`);
