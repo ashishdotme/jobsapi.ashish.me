@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { sendEvent } from 'src/common/utils';
 import axios from 'axios';
 
 @Injectable()
 export class WikiService {
+	private readonly logger = new Logger(WikiService.name);
+
 	async create(createWikiDto: any, apikey: string) {
 		try {
 			const payload = this.buildNewWkiPayload(createWikiDto);
 			return await this.postNewWki(payload, apikey);
 		} catch (e) {
 			await sendEvent('create_memo_failed', createWikiDto.memo.content);
+			this.logger.error(`Memo creation failed: ${e.message}`, e.stack);
 			return { error: `Failed to create memo - ${e.message}` };
 		}
 	}

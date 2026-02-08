@@ -1,26 +1,35 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { CreateListenDto } from './dto/create-listen.dto';
 import { sendEvent } from 'src/common/utils';
 
 @Injectable()
 export class ListensService {
-	async create(createListenDto: any, apikey: string) {
+	private readonly logger = new Logger(ListensService.name);
+
+	async create(createListenDto: CreateListenDto, apikey: string) {
 		try {
 			const payload = this.buildNewListenPayload(createListenDto);
 			return await this.postNewListen(payload, apikey);
 		} catch (e) {
-			await sendEvent('create_listen_failed', createListenDto.payload[0].track_metadata.track_name);
+			const failedTrack = createListenDto?.payload?.[0]?.track_metadata?.track_name ?? 'unknown_track';
+			await sendEvent('create_listen_failed', failedTrack);
+			this.logger.error(`Listen creation failed for "${failedTrack}": ${e.message}`, e.stack);
 			return { error: `Failed to create listen - ${e.message}` };
 		}
 	}
 
 	private buildNewListenPayload(createListenDto: CreateListenDto): any {
+		const payload = createListenDto?.payload?.[0];
+		if (!payload?.track_metadata?.track_name) {
+			throw new Error('Missing listen payload');
+		}
+
 		return {
-			title: createListenDto.payload[0].track_metadata.track_name,
-			album: createListenDto.payload[0].track_metadata.release_name,
-			artist: createListenDto.payload[0].track_metadata.artist_name,
-			listenDate: new Date(createListenDto.payload[0].listened_at * 1000).toISOString(),
+			title: payload.track_metadata.track_name,
+			album: payload.track_metadata.release_name,
+			artist: payload.track_metadata.artist_name,
+			listenDate: new Date(payload.listened_at * 1000).toISOString(),
 		};
 	}
 

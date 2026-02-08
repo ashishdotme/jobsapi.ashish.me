@@ -1,6 +1,7 @@
 import { Controller, Request, Post, Body, Query } from '@nestjs/common';
 import { WikiService } from './wiki.service';
 import { CreateWikiDto } from './dto/create-wiki.dto';
+import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
 
 @Controller('wiki')
 export class WikiController {
@@ -8,9 +9,9 @@ export class WikiController {
 
 	@Post()
 	create(@Request() req, @Body() createWikiDto: CreateWikiDto, @Query('apikey') apiKeyParam: string) {
-		const apiKey = apiKeyParam || req.headers.apikey;
+		const apiKey = extractApiKey(req, apiKeyParam);
 		if (!apiKey) {
-			return { error: 'Apikey cannot be blank' };
+			return { error: API_KEY_MISSING_MESSAGE };
 		}
 		return this.wikiService.create(createWikiDto, apiKey);
 	}

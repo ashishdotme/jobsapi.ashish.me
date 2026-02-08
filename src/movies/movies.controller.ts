@@ -3,6 +3,7 @@ import { MoviesService } from './movies.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiSecurity } from '@nestjs/swagger';
+import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
 
 @Controller('movies')
 @ApiTags('movies')
@@ -12,9 +13,9 @@ export class MoviesController {
 
 	@Post()
 	create(@Request() req, @Body() createMovieDto: CreateMovieDto, @Query('apikey') apiKeyParam: string) {
-		const apiKey = apiKeyParam || req.headers.apikey;
+		const apiKey = extractApiKey(req, apiKeyParam);
 		if (!apiKey) {
-			return { error: 'Apikey cannot be blank' };
+			return { error: API_KEY_MISSING_MESSAGE };
 		}
 		return this.moviesService.create(createMovieDto, apiKey);
 	}

@@ -2,6 +2,7 @@ import { Controller, Post, Body, Request, Get, HttpCode } from '@nestjs/common';
 import { ListensService } from './listens.service';
 import { CreateListenDto } from './dto/create-listen.dto';
 import { ApiTags, ApiSecurity } from '@nestjs/swagger';
+import { API_KEY_MISSING_MESSAGE, extractTokenApiKey } from '../common/auth';
 
 @Controller('/1')
 @ApiTags('listens')
@@ -21,9 +22,10 @@ export class ListensController {
 
 	@Post('submit-listens')
 	create(@Request() req, @Body() createListenDto: CreateListenDto) {
-		if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Token') {
-			const apiKey = req.headers.authorization.split(' ')[1];
-			return this.listensService.create(createListenDto, apiKey);
+		const apiKey = extractTokenApiKey(req);
+		if (!apiKey) {
+			return { error: API_KEY_MISSING_MESSAGE };
 		}
+		return this.listensService.create(createListenDto, apiKey);
 	}
 }

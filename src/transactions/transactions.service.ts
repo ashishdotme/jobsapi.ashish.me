@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { transactionCategories } from '../data/categories';
 import axios from 'axios';
@@ -7,6 +7,24 @@ import * as _ from 'remeda';
 
 @Injectable()
 export class TransactionsService {
+	private readonly logger = new Logger(TransactionsService.name);
+
+	private parseTransaction(rawTransaction: string): { amount: number; merchant: string } | null {
+		if (!rawTransaction?.trim()) {
+			return null;
+		}
+
+		const [amountToken, ...merchantTokens] = rawTransaction.trim().split(/\s+/);
+		const amount = Number(amountToken);
+		const merchant = merchantTokens.join(' ').trim();
+
+		if (!Number.isFinite(amount) || !merchant) {
+			return null;
+		}
+
+		return { amount, merchant };
+	}
+
 	async getTotal(apiKey: any) {
 		const transactions = await this.getTransactions(apiKey);
 		let total = 0;
@@ -27,23 +45,23 @@ export class TransactionsService {
 
 	async create(createTransactionDto: CreateTransactionDto, apikey: string) {
 		try {
-			const amount = createTransactionDto.transaction.slice(0, createTransactionDto.transaction.indexOf(' '));
-			const merchant = createTransactionDto.transaction.slice(createTransactionDto.transaction.indexOf(' '), createTransactionDto.transaction.length).trim();
-
-			if (!merchant || !amount) {
+			const transaction = this.parseTransaction(createTransactionDto.transaction);
+			if (!transaction) {
 				await sendEvent('create_transaction_failed', createTransactionDto.transaction);
+				this.logger.warn(`Transaction parsing failed for input "${createTransactionDto.transaction}"`);
 				return { error: `Failed to create transaction` };
 			}
 
-			let category = transactionCategories.find(x => x.keywords.find(y => y.replace(' ', '').toLowerCase().includes(merchant.replace(' ', '').toLowerCase())))?.name;
+			const normalizedMerchant = transaction.merchant.replace(/\s+/g, '').toLowerCase();
+			let category = transactionCategories.find(x => x.keywords.find(y => normalizedMerchant.includes(y.replace(/\s+/g, '').toLowerCase())))?.name;
 
 			if (!category) {
 				category = 'Miscellaneous';
 			}
 
 			const payload = {
-				amount: Number(amount),
-				merchant: _.capitalize(merchant),
+				amount: transaction.amount,
+				merchant: _.capitalize(transaction.merchant),
 				category: _.capitalize(category),
 				date: createTransactionDto.date || new Date(),
 			};
@@ -51,6 +69,7 @@ export class TransactionsService {
 			return await this.postNewTransaction(payload, apikey);
 		} catch (e) {
 			await sendEvent('create_transaction_failed', createTransactionDto.transaction);
+			this.logger.error(`Transaction creation failed: ${e.message}`, e.stack);
 			return { error: `Failed to create transaction - ${e.message}` };
 		}
 	}

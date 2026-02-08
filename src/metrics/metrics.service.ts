@@ -28,7 +28,7 @@ export class MetricsService {
 			await this.processSleepMetrics(createMetricDto, apiKey);
 			return HttpStatus.OK;
 		} catch (error) {
-			this.logger.error(`Failed to process metrics: ${error.message}`);
+			this.logger.error(`Failed to process metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
 			throw new HttpException('Failed to process metrics', HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -38,6 +38,10 @@ export class MetricsService {
 		if (!stepsMetrics) return;
 
 		for (const step of stepsMetrics.data) {
+			if (typeof step.qty !== 'number') {
+				continue;
+			}
+
 			const newMetric: StepMetric = {
 				stepCount: step.qty.toFixed(),
 				date: this.formatDate(step.date),
@@ -53,6 +57,10 @@ export class MetricsService {
 		if (!sleepMetrics) return;
 
 		for (const sleep of sleepMetrics.data) {
+			if (!sleep.sleepStart || !sleep.sleepEnd) {
+				continue;
+			}
+
 			const sleepStartDate = new Date(sleep.sleepStart);
 			const sleepEndDate = new Date(sleep.sleepEnd);
 			const sleepHours = (sleepEndDate.getTime() - sleepStartDate.getTime()) / (1000 * 60 * 60); // difference in hours
@@ -69,7 +77,7 @@ export class MetricsService {
 	}
 
 	private formatDate(dateString: string): string {
-		return format(dateString.split(' ')[0], 'M/d/yy');
+		return format(new Date(dateString.split(' ')[0]), 'M/d/yy');
 	}
 
 	private async postData<T>(endpoint: string, data: T, apiKey: string): Promise<any> {
@@ -82,7 +90,8 @@ export class MetricsService {
 			const response = await axios.post(`${this.API_BASE_URL}${endpoint}`, data, config);
 			return response.data;
 		} catch (error) {
-			this.logger.error(`API request failed: ${error.response?.data || error.message}`);
+			const errorMessage = error?.response?.data || error?.message || 'Unknown error';
+			this.logger.error(`API request failed: ${errorMessage}`);
 			throw error;
 		}
 	}

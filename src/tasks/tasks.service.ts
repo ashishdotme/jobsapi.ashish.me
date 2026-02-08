@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import TickTick from './helpers/ticktick/ticktick';
@@ -7,6 +7,7 @@ import { Task } from './helpers/ticktick/task';
 
 @Injectable()
 export class TasksService {
+	private readonly logger = new Logger(TasksService.name);
 	private readonly ticktickApi = new TickTick(this.configService.get<string>('TICKTICK_TOKEN'));
 	private readonly apiKey = this.configService.get<string>('ASHISHDOTME_TOKEN');
 
@@ -14,39 +15,50 @@ export class TasksService {
 
 	@Interval(60000)
 	async handleInterval() {
-		const ticktickReponse = await this.ticktickApi.getTasks();
-		const ticktickTasks: Task[] = ticktickReponse.tasks;
-		const todos = await axios.get('https://api.ashish.me/todos/incomplete');
-		for (const ticktickTask of ticktickTasks) {
-			try {
-				const isCreated = todos.data.find(x => x.content == ticktickTask.title);
-				if (isCreated) {
-					continue;
-				}
-				const newTodo = {
-					content: ticktickTask.title,
-					todoId: ticktickTask.id,
-				};
-				this.postTodo(newTodo, this.apiKey);
-				console.log('Successfully created task from ticktick to ashish.me');
-			} catch (Error) {
-				console.log('Failed to create new task ' + Error.message);
-			}
+		if (!this.apiKey) {
+			this.logger.warn('Skipping TickTick sync: ASHISHDOTME_TOKEN is not configured');
+			return;
 		}
 
-		for (const todo of todos.data) {
-			try {
-				const ticktickTask = await this.ticktickApi.getTask(todo.todoId);
-				if (!ticktickTask) {
-					continue;
+		try {
+			const ticktickReponse = await this.ticktickApi.getTasks();
+			const ticktickTasks: Task[] = ticktickReponse?.tasks ?? [];
+			const todos = await axios.get('https://api.ashish.me/todos/incomplete', {
+				headers: { apiKey: this.apiKey },
+			});
+			for (const ticktickTask of ticktickTasks) {
+				try {
+					const isCreated = todos.data.find(x => x.content === ticktickTask.title);
+					if (isCreated) {
+						continue;
+					}
+					const newTodo = {
+						content: ticktickTask.title,
+						todoId: ticktickTask.id,
+					};
+					await this.postTodo(newTodo, this.apiKey);
+					this.logger.log('Successfully created task from TickTick to api.ashish.me');
+				} catch (error) {
+					this.logger.error(`Failed to create new task: ${error.message}`);
 				}
-				if (ticktickTask.status == 2 || (ticktickTask.items && ticktickTask.items[0].status) == 1) {
-					this.completeTodo(todo.id, this.apiKey);
-					console.log('Successfully completed task');
-				}
-			} catch (Error) {
-				console.log('Failed to complete task' + Error.message);
 			}
+
+			for (const todo of todos.data) {
+				try {
+					const ticktickTask = await this.ticktickApi.getTask(todo.todoId);
+					if (!ticktickTask) {
+						continue;
+					}
+					if (ticktickTask.status === 2 || (ticktickTask.items && ticktickTask.items[0].status) === 1) {
+						await this.completeTodo(todo.id, this.apiKey);
+						this.logger.log('Successfully completed task');
+					}
+				} catch (error) {
+					this.logger.error(`Failed to complete task: ${error.message}`);
+				}
+			}
+		} catch (error) {
+			this.logger.error(`TickTick sync iteration failed: ${error.message}`);
 		}
 	}
 

@@ -1,5 +1,6 @@
 import { Controller, Post, Request, Body, Query } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
+import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
 
 @Controller('metrics')
 export class MetricsController {
@@ -7,11 +8,10 @@ export class MetricsController {
 
 	@Post()
 	create(@Request() req, @Body() createStepDto: any, @Query('apikey') apiKeyParam: string) {
-		const apiKey = apiKeyParam || req.headers.apikey;
+		const apiKey = extractApiKey(req, apiKeyParam);
 		if (!apiKey) {
-			return { error: 'Apikey cannot be blank' };
+			return { error: API_KEY_MISSING_MESSAGE };
 		}
-		console.log(JSON.stringify(createStepDto));
 		return this.metricsService.create(createStepDto, apiKey);
 	}
 }

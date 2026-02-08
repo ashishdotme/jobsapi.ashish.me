@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import * as _ from 'lodash';
 import axios from 'axios';
@@ -7,6 +7,7 @@ import { sendEvent, fetchDetailsFromOmdb, fetchDetailsFromImdb } from '../common
 
 @Injectable()
 export class MoviesService {
+	private readonly logger = new Logger(MoviesService.name);
 	private OMDB_APIKEY: string = this.configService.get<string>('OMDB');
 
 	constructor(private configService: ConfigService) {}
@@ -18,28 +19,36 @@ export class MoviesService {
 
 	async create(createMovieDto: CreateMovieDto, apikey: string): Promise<any> {
 		if (_.isEmpty(createMovieDto.title)) {
+			this.logger.warn('Movie creation rejected: title is blank');
 			return { error: 'Title cannot be blank' };
 		}
 
 		const viewingDate = this.calculateViewingDate(createMovieDto);
 		try {
 			let movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
-			let	moviePayload = this.buildNewMoviePayloadFromOmdb(createMovieDto, movieDetails, viewingDate);
+			let moviePayload: any = null;
 
-			if (!movieDetails) {
-				movieDetails = await fetchDetailsFromImdb(createMovieDto.title);
-				moviePayload = this.buildNewMoviePayloadFromImdb(createMovieDto, movieDetails, viewingDate);
+			if (movieDetails) {
+				moviePayload = this.buildNewMoviePayloadFromOmdb(createMovieDto, movieDetails, viewingDate);
 			}
 
-			if (!movieDetails) {
+			if (!moviePayload) {
+				movieDetails = await fetchDetailsFromImdb(createMovieDto.title);
+				if (movieDetails) {
+					moviePayload = this.buildNewMoviePayloadFromImdb(createMovieDto, movieDetails, viewingDate);
+				}
+			}
+
+			if (!moviePayload) {
 				await sendEvent('create_movie_failed', createMovieDto.title);
+				this.logger.warn(`Movie creation failed: no metadata found for "${createMovieDto.title}"`);
 				return { error: `Failed to create movie - Movie not found` };
 			}
 
-			console.log(moviePayload);
 			return await this.postNewMovie(moviePayload, apikey);
 		} catch (e) {
 			await sendEvent('create_movie_failed', createMovieDto.title);
+			this.logger.error(`Movie creation failed for "${createMovieDto.title}": ${e.message}`, e.stack);
 			return { error: `Failed to create movie - ${e.message}` };
 		}
 	}
@@ -53,30 +62,35 @@ export class MoviesService {
 	}
 
 	private buildNewMoviePayloadFromOmdb(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
+		const ratingValue = _.get(movieDetails, 'Ratings[0].Value', '0/10');
+		const imdbRating = Number(ratingValue.split('/')[0]);
+		const parsedYear = Number(movieDetails.Year);
 		return {
 			title: movieDetails.Title,
 			description: movieDetails.Plot,
 			language: 'English',
-			year: Number(movieDetails.Year),
+			year: Number.isFinite(parsedYear) ? parsedYear : 0,
 			genre: movieDetails.Genre,
 			viewingDate: viewingDate,
-			imdbRating: Number(_.get(movieDetails.Ratings[0], 'Value').split('/')[0]),
+			imdbRating: Number.isFinite(imdbRating) ? imdbRating : 0,
 			imdbId: movieDetails.imdbID,
-			loved: createMovieDto.loved || true,
+			loved: createMovieDto.loved ?? true,
 		};
 	}
 
 	private buildNewMoviePayloadFromImdb(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
+		const rating = Number(_.get(movieDetails, 'rating.star', 0));
+		const genres = _.get(movieDetails, 'genre', []);
 		return {
 			title: movieDetails.title,
 			description: movieDetails.plot,
-			language: movieDetails.spokenLanguages[0].language,
+			language: _.get(movieDetails, 'spokenLanguages[0].language', 'Unknown'),
 			year: Number(movieDetails.year),
-			genre: movieDetails.genre.join(', '),
+			genre: Array.isArray(genres) ? genres.join(', ') : '',
 			viewingDate: viewingDate,
-			imdbRating: Number(movieDetails.rating.star),
+			imdbRating: Number.isFinite(rating) ? rating : 0,
 			imdbId: movieDetails.id,
-			loved: createMovieDto.loved || true,
+			loved: createMovieDto.loved ?? true,
 		};
 	}
 
