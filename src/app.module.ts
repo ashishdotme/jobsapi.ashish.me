@@ -11,6 +11,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { LocationsModule } from './locations/locations.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BulkImportModule } from './bulk-import/bulk-import.module';
 
 @Module({
 	imports: [
@@ -26,6 +27,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 		MetricsModule,
 		LocationsModule,
 		TasksModule,
+		BulkImportModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

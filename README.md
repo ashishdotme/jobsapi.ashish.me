@@ -40,6 +40,11 @@ Supported patterns:
 - Header: `apikey: <key>`
 - ListenBrainz-compatible endpoint uses: `Authorization: Token <key>`
 
+Current configured keys are read from environment:
+
+- `API_KEYS` (comma-separated), or
+- `API_KEY` (single key)
+
 If no key is provided, endpoints usually return:
 
 ```json
@@ -54,17 +59,29 @@ Create `.env` with:
 OMDB=<omdb_api_key>
 ASHISHDOTME_TOKEN=<api_key_for_todo_sync_job>
 TICKTICK_TOKEN=<ticktick_access_token>
+API_KEYS=<comma_separated_valid_keys>
+BULK_UPLOAD_MAX_BYTES=10485760
+BULK_IMPORT_RATE_LIMIT_PER_MINUTE=120
+DATABASE_URL=<postgres_connection_string_for_bulk_job_storage>
+BULK_IMPORT_REMOTE_DEDUPE=false
 ```
+
+When `DATABASE_URL` is set, jobsapi persists bulk import state in:
+
+- `bulk_import_jobs`
+- `bulk_import_rows`
 
 ## Run Locally
 
 ```bash
 npm install
-npm run start:dev
+npm run build
+npm run start
 ```
 
 Service runs on `http://localhost:3000`.
 Swagger UI: `http://localhost:3000/api`
+Dashboard UI: `http://localhost:3000/dashboard`
 
 ## Docker
 
@@ -204,6 +221,15 @@ Behavior:
 
 - Maps to `{ content, category: "Tech", date }`
 - Writes to `POST https://api.ashish.me/wiki`
+
+### Bulk import (new)
+
+- `POST /bulk-import/movies` (multipart `file` + optional `dryRun`, `skipDuplicates`)
+- `GET /bulk-import/jobs/:jobId`
+- `GET /bulk-import/jobs/:jobId/rows`
+- `POST /bulk-import/jobs/:jobId/retry-failed`
+
+Supported movie CSV source right now: Letterboxd (`Date,Name,Year,Letterboxd URI`).
 
 ## Scheduled Sync Job
 

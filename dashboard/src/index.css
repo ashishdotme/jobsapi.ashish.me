@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* Core palette (RGB triplets for Tailwind alpha support) */
+    --paper: 248 250 252; /* slate-50 */
+    --surface: 255 255 255;
+    --surface2: 241 245 249; /* slate-100 */
+    --ink: 2 6 23; /* slate-950 */
+    --muted: 71 85 105; /* slate-600 */
+    --border: 226 232 240; /* slate-200 */
+
+    /* Domain accent: "ticket orange" + "scanline blue" */
+    --accent: 249 115 22; /* orange-500 */
+    --accent2: 14 165 233; /* sky-500 */
+
+    /* Status colors */
+    --good: 16 185 129; /* emerald-500 */
+    --warn: 245 158 11; /* amber-500 */
+    --bad: 244 63 94; /* rose-500 */
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    color: rgb(var(--ink));
+
+    /* Clean base + subtle projection glow + grid to hint "ops console". */
+    background-color: rgb(var(--paper));
+    background-image:
+      radial-gradient(900px 420px at 12% 6%, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0) 62%),
+      radial-gradient(700px 380px at 86% 10%, rgba(14, 165, 233, 0.10) 0%, rgba(14, 165, 233, 0) 60%),
+      linear-gradient(rgba(2, 6, 23, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(2, 6, 23, 0.045) 1px, transparent 1px);
+    background-size: auto, auto, 36px 36px, 36px 36px;
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .ui-card {
+    @apply rounded-2xl border border-border/80 bg-surface/85 shadow-uiTight backdrop-blur;
+  }
+
+  .ui-card-solid {
+    @apply rounded-2xl border border-border bg-surface shadow-uiTight;
+  }
+
+  .ui-kbd {
+    @apply rounded-lg border border-border bg-surface2 px-2 py-1 font-mono text-[12px] text-ink/80;
+  }
+
+  .ui-input {
+    @apply w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-ink shadow-sm outline-none transition;
+    @apply focus:border-accent/60 focus:ring-4 focus:ring-accent/10;
+  }
+
+  .ui-select {
+    @apply rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink shadow-sm outline-none transition;
+    @apply focus:border-accent/60 focus:ring-4 focus:ring-accent/10;
+  }
+
+  .ui-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition;
+    @apply focus:outline-none focus:ring-4 focus:ring-accent/15 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-btn-primary {
+    @apply ui-btn bg-ink text-paper;
+  }
+
+  .ui-btn-accent {
+    @apply ui-btn text-ink;
+    background-image: linear-gradient(135deg, rgba(249, 115, 22, 0.95), rgba(14, 165, 233, 0.75));
+  }
+
+  .ui-table {
+    @apply w-full text-left text-sm;
+  }
+
+  .ui-th {
+    @apply bg-surface2/70 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .ui-tr {
+    @apply border-t border-border/70 hover:bg-surface2/40;
+  }
+}

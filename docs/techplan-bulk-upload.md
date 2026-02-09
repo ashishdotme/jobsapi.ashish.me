@@ -189,6 +189,8 @@ Create a small frontend (prefer separate app under `jobsapi.ashish.me/dashboard`
 ## 10. Security
 
 - Require API key for bulk endpoints.
+- Use same key set as `api.ashish.me` via env (`API_KEYS` or `API_KEY`) in jobsapi.
+- Reject requests with missing or incorrect key before parsing CSV.
 - File constraints:
   - max size (for example 10MB initially)
   - CSV mime + extension checks
