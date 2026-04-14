@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { getUpdatesOverview, listRecentUpdates, startThreadsAuth, syncUpdatesNow } from '@/lib/api'
+import { getUpdatesOverview, listRecentUpdates, retryFailedUpdatesDeliveries, startThreadsAuth, syncUpdatesNow } from '@/lib/api'
 import { getApiKey } from '@/lib/storage'
 import type { UpdatesBridgePost, UpdatesOverview } from '@/types'
 
@@ -54,6 +54,7 @@ export const UpdatesPage = () => {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [retryingFailed, setRetryingFailed] = useState(false)
 
   const apiKey = getApiKey()
   const threadsConnected = searchParams.get('threads') === 'connected'
@@ -171,6 +172,25 @@ export const UpdatesPage = () => {
       setError(err instanceof Error ? err.message : 'Failed to start manual sync')
     } finally {
       setSyncing(false)
+    }
+  }
+
+  const onRetryFailed = async () => {
+    if (!apiKey) {
+      setError('Set the API key in Settings before retrying failed deliveries')
+      return
+    }
+
+    setRetryingFailed(true)
+    setError('')
+
+    try {
+      await retryFailedUpdatesDeliveries(apiKey)
+      await refreshWorkspace()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to retry failed deliveries')
+    } finally {
+      setRetryingFailed(false)
     }
   }
 
@@ -317,6 +337,15 @@ export const UpdatesPage = () => {
                 <div>Last seen post: <span className="font-mono text-foreground">{overview?.sync.lastSeenPostId ?? 'None yet'}</span></div>
               </div>
             </div>
+
+            <Button
+              variant="outline"
+              onClick={() => void onRetryFailed()}
+              disabled={retryingFailed || !apiKey || (overview?.delivery.failed ?? 0) === 0}
+              className="w-full"
+            >
+              {retryingFailed ? 'Retrying failed deliveries...' : 'Retry failed deliveries'}
+            </Button>
 
             {!apiKey && (
               <Alert className="border-warning/20 bg-warning/5">

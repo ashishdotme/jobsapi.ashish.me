@@ -25,4 +25,10 @@ export class UpdatesBridgeOpsController {
 		requireApiKey(req);
 		return this.updatesBridgeService.triggerManualSync();
 	}
+
+	@Post('retry-failed')
+	async retryFailed(@Req() req: any) {
+		requireApiKey(req);
+		return this.updatesBridgeService.retryFailedDeliveries();
+	}
 }

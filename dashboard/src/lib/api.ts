@@ -224,3 +224,15 @@ export const syncUpdatesNow = async (apiKey: string): Promise<{ accepted: boolea
 
   return parseApiResponse<{ accepted: boolean; status: 'started' | 'already_running' }>(response)
 }
+
+export const retryFailedUpdatesDeliveries = async (apiKey: string): Promise<{ retried: number }> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/updates/retry-failed', normalizedApiKey), {
+    method: 'POST',
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<{ retried: number }>(response)
+}

@@ -6,6 +6,7 @@ describe('UpdatesBridgeOpsController', () => {
 		getOverview: jest.Mock;
 		getRecentPosts: jest.Mock;
 		triggerManualSync: jest.Mock;
+		retryFailedDeliveries: jest.Mock;
 	};
 
 	beforeEach(() => {
@@ -14,6 +15,7 @@ describe('UpdatesBridgeOpsController', () => {
 			getOverview: jest.fn(),
 			getRecentPosts: jest.fn(),
 			triggerManualSync: jest.fn(),
+			retryFailedDeliveries: jest.fn(),
 		};
 		controller = new UpdatesBridgeOpsController(service as any);
 	});
@@ -59,5 +61,17 @@ describe('UpdatesBridgeOpsController', () => {
 
 		expect(service.triggerManualSync).toHaveBeenCalled();
 		expect(result).toEqual({ accepted: true, status: 'started' });
+	});
+
+	it('requeues failed deliveries when an api key is present', async () => {
+		service.retryFailedDeliveries.mockResolvedValue({ retried: 2 });
+
+		const result = await controller.retryFailed({
+			headers: { apikey: 'test-key' },
+			query: {},
+		} as any);
+
+		expect(service.retryFailedDeliveries).toHaveBeenCalled();
+		expect(result).toEqual({ retried: 2 });
 	});
 });

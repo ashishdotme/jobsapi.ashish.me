@@ -75,6 +75,11 @@ export class UpdatesBridgeService {
 		return { accepted: true, status: 'started' };
 	}
 
+	async retryFailedDeliveries(): Promise<{ retried: number }> {
+		const retried = await this.repository.retryFailedDeliveries();
+		return { retried };
+	}
+
 	async getOverview(): Promise<UpdatesBridgeOverview> {
 		const [integration, checkpoint, delivery] = await Promise.all([
 			this.repository.getActiveIntegration(),

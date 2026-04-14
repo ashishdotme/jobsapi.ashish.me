@@ -356,6 +356,33 @@ export class UpdatesBridgeRepository {
 		return (result?.rows ?? []).map((row) => this.mapPostRow(row));
 	}
 
+	async retryFailedDeliveries(): Promise<number> {
+		if (!this.updatesBridgeDbService.isEnabled()) {
+			let retried = 0;
+			for (const [key, post] of this.posts.entries()) {
+				const updated = this.buildRetriedPost(post);
+				if (!updated) {
+					continue;
+				}
+				this.posts.set(key, updated);
+				retried += 1;
+			}
+			return retried;
+		}
+
+		const pool = this.updatesBridgeDbService.getPool();
+		const result = await pool?.query(
+			`UPDATE threads_bridge_posts
+			 SET api_status = CASE WHEN api_status = 'failed' THEN 'pending' ELSE api_status END,
+			     bluesky_status = CASE WHEN bluesky_status = 'failed' THEN 'pending' ELSE bluesky_status END,
+			     next_attempt_at = NULL,
+			     last_error = NULL,
+			     updated_at = NOW()
+			 WHERE api_status = 'failed' OR bluesky_status = 'failed'`,
+		);
+		return result?.rowCount ?? 0;
+	}
+
 	async getPostMetrics(): Promise<ThreadsBridgeMetrics> {
 		if (!this.updatesBridgeDbService.isEnabled()) {
 			const posts = Array.from(this.posts.values());
@@ -512,6 +539,23 @@ export class UpdatesBridgeRepository {
 			post.blueskyStatus === 'failed' ||
 			post.blueskyStatus === 'failed_permanent'
 		);
+	}
+
+	private buildRetriedPost(post: ThreadsBridgePost): ThreadsBridgePost | null {
+		const retryApi = post.apiStatus === 'failed';
+		const retryBluesky = post.blueskyStatus === 'failed';
+		if (!retryApi && !retryBluesky) {
+			return null;
+		}
+
+		return {
+			...post,
+			apiStatus: retryApi ? 'pending' : post.apiStatus,
+			blueskyStatus: retryBluesky ? 'pending' : post.blueskyStatus,
+			nextAttemptAt: null,
+			lastError: null,
+			updatedAt: new Date().toISOString(),
+		};
 	}
 
 	private postKey(sourcePlatform: 'threads', sourcePostId: string): string {

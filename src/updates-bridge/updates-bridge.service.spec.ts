@@ -15,6 +15,7 @@ describe('UpdatesBridgeService', () => {
 		markApiDelivered: jest.Mock;
 		markBlueskyDelivered: jest.Mock;
 		markDeliveryFailure: jest.Mock;
+		retryFailedDeliveries: jest.Mock;
 	};
 	let threadsClient: {
 		refreshAccessToken: jest.Mock;
@@ -37,6 +38,7 @@ describe('UpdatesBridgeService', () => {
 			markApiDelivered: jest.fn(),
 			markBlueskyDelivered: jest.fn(),
 			markDeliveryFailure: jest.fn(),
+			retryFailedDeliveries: jest.fn(),
 		};
 		threadsClient = {
 			refreshAccessToken: jest.fn(),
@@ -293,5 +295,14 @@ describe('UpdatesBridgeService', () => {
 
 		expect(result).toEqual({ accepted: true, status: 'started' });
 		expect(repository.getActiveIntegration).toHaveBeenCalled();
+	});
+
+	it('retries only temporary failed deliveries', async () => {
+		repository.retryFailedDeliveries.mockResolvedValue(3);
+
+		const result = await service.retryFailedDeliveries();
+
+		expect(repository.retryFailedDeliveries).toHaveBeenCalled();
+		expect(result).toEqual({ retried: 3 });
 	});
 });

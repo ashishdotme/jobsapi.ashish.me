@@ -135,6 +135,40 @@ describe('UpdatesBridgeRepository', () => {
 		);
 	});
 
+	it('requeues temporary failed deliveries without touching permanent failures', async () => {
+		const temporary = await repository.upsertPost(createPost({ sourcePostId: 'temporary' }));
+		await repository.markDeliveryFailure(temporary.id, 'temporary failure', {
+			nextAttemptAt: '2026-04-13T12:00:00.000Z',
+			permanent: false,
+		});
+
+		const permanent = await repository.upsertPost(createPost({ sourcePostId: 'permanent' }));
+		await repository.markDeliveryFailure(permanent.id, 'permanent failure', {
+			nextAttemptAt: null,
+			permanent: true,
+		});
+
+		const retried = await repository.retryFailedDeliveries();
+		const retriedPost = await repository.getPostBySourceId('threads', 'temporary');
+		const permanentPost = await repository.getPostBySourceId('threads', 'permanent');
+
+		expect(retried).toBe(1);
+		expect(retriedPost).toEqual(
+			expect.objectContaining({
+				apiStatus: 'pending',
+				blueskyStatus: 'pending',
+				nextAttemptAt: null,
+				lastError: null,
+			}),
+		);
+		expect(permanentPost).toEqual(
+			expect.objectContaining({
+				apiStatus: 'failed_permanent',
+				blueskyStatus: 'failed_permanent',
+			}),
+		);
+	});
+
 	it('lists recent posts in descending published order', async () => {
 		await repository.upsertPost(createPost({ sourcePostId: 'post-1', sourcePublishedAt: '2026-04-13T10:00:00.000Z' }));
 		await repository.upsertPost(createPost({ sourcePostId: 'post-2', sourcePublishedAt: '2026-04-13T11:00:00.000Z' }));
