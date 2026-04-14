@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import axios from 'axios';
+import { formatLogMessage } from './logging';
 
 const logger = new Logger('CommonUtils');
 
@@ -10,7 +11,7 @@ export const sendEvent = async (type: string, message: string): Promise<void> =>
 			message,
 		});
 	} catch {
-		logger.warn(`Failed to send event "${type}"`);
+		logger.warn(formatLogMessage('event.send.failed', { type, message }));
 	}
 };
 
@@ -22,26 +23,20 @@ export const fetchDetailsFromOmdb = async (title: string, omdbApiKey): Promise<a
 		}
 		return response.data;
 	} catch {
-		logger.warn(`OMDb lookup failed for title "${title}"`);
+		logger.warn(formatLogMessage('omdb.lookup.failed', { title }));
 		return null;
 	}
 };
 
-export const fetchDetailsFromImdb = async (title: string): Promise<any> => {
+export const fetchDetailsFromOmdbByImdbId = async (imdbId: string, omdbApiKey): Promise<any> => {
 	try {
-		const response = await axios.get(`https://imdb.ashish.me/search?query=${encodeURIComponent(title)}`);
-
-		if (!response.data || !response.data.results?.length) {
-			throw new Error(`Failed to fetch details from IMDB - Not found`);
+		const response = await axios.get(`http://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${omdbApiKey}`);
+		if (!response.data || response.data.Response === 'False') {
+			return null;
 		}
-
-		const imdbId = response.data.results[0].id;
-		const year = response.data.results[0].year;
-		const finalResponse = await axios.get(`https://imdb.ashish.me/title/${imdbId.trim()}`);
-		finalResponse.data.year = year;
-		return finalResponse.data;
+		return response.data;
 	} catch {
-		logger.warn(`IMDb lookup failed for title "${title}"`);
+		logger.warn(formatLogMessage('omdb.lookup.failed', { imdbId }));
 		return null;
 	}
 };

@@ -1,7 +1,7 @@
 import { Controller, Post, Request, Body, Query } from '@nestjs/common';
 import { LocationsService } from './locations.service';
 import { CreateLocationDto } from './dto/create-location.dto';
-import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
+import { requireApiKey } from '../common/auth';
 
 @Controller('locations')
 export class LocationsController {
@@ -9,10 +9,7 @@ export class LocationsController {
 
 	@Post()
 	create(@Request() req, @Body() createLocationDto: CreateLocationDto, @Query('apikey') apiKeyParam: string) {
-		const apiKey = extractApiKey(req, apiKeyParam);
-		if (!apiKey) {
-			return { error: API_KEY_MISSING_MESSAGE };
-		}
+		const apiKey = requireApiKey(req, apiKeyParam);
 		return this.locationsService.create(createLocationDto, apiKey);
 	}
 }

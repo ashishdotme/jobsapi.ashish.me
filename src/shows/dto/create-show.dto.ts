@@ -18,4 +18,10 @@ export class CreateShowDto {
 
 	@ApiProperty()
 	loved?: boolean;
+
+	@ApiProperty()
+	posterUrl?: string;
+
+	@ApiProperty()
+	tmdbId?: number;
 }

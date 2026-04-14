@@ -4,6 +4,7 @@ import { transactionCategories } from '../data/categories';
 import axios from 'axios';
 import { sendEvent } from 'src/common/utils';
 import * as _ from 'remeda';
+import { formatLogMessage, getErrorMessage, getErrorStack } from '../common/logging';
 
 @Injectable()
 export class TransactionsService {
@@ -48,7 +49,7 @@ export class TransactionsService {
 			const transaction = this.parseTransaction(createTransactionDto.transaction);
 			if (!transaction) {
 				await sendEvent('create_transaction_failed', createTransactionDto.transaction);
-				this.logger.warn(`Transaction parsing failed for input "${createTransactionDto.transaction}"`);
+				this.logger.warn(formatLogMessage('transaction.create.rejected', { reason: 'parse_failed', payload: createTransactionDto }));
 				return { error: `Failed to create transaction` };
 			}
 
@@ -67,10 +68,10 @@ export class TransactionsService {
 			};
 
 			return await this.postNewTransaction(payload, apikey);
-		} catch (e) {
+		} catch (error) {
 			await sendEvent('create_transaction_failed', createTransactionDto.transaction);
-			this.logger.error(`Transaction creation failed: ${e.message}`, e.stack);
-			return { error: `Failed to create transaction - ${e.message}` };
+			this.logger.error(formatLogMessage('transaction.create.failed', { payload: createTransactionDto, errorMessage: getErrorMessage(error) }), getErrorStack(error));
+			return { error: `Failed to create transaction - ${getErrorMessage(error)}` };
 		}
 	}
 

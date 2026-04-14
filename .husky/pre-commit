@@ -1,3 +1,7 @@
-# shellcheck disable=SC2148
+#!/usr/bin/env sh
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+eval "$(fnm env)"
 npm run format
 npm run lint

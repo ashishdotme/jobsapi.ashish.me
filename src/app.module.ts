@@ -12,9 +12,19 @@ import { LocationsModule } from './locations/locations.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BulkImportModule } from './bulk-import/bulk-import.module';
+import { LoggerModule } from 'nestjs-pino';
+import { buildPinoHttpConfig } from './logging/logger.config';
+import { UpdatesBridgeModule } from './updates-bridge/updates-bridge.module';
 
 @Module({
 	imports: [
+		LoggerModule.forRoot({
+			pinoHttp: buildPinoHttpConfig({
+				nodeEnv: process.env.NODE_ENV || 'development',
+				logLevel: process.env.LOG_LEVEL || 'info',
+				serviceName: process.env.SERVICE_NAME || 'jobsapi.ashish.me',
+			}),
+		}),
 		MoviesModule,
 		ConfigModule.forRoot({
 			isGlobal: true,
@@ -28,6 +38,7 @@ import { BulkImportModule } from './bulk-import/bulk-import.module';
 		LocationsModule,
 		TasksModule,
 		BulkImportModule,
+		UpdatesBridgeModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

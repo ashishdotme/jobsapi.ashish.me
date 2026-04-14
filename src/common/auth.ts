@@ -1,3 +1,5 @@
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+
 export const API_KEY_MISSING_MESSAGE = 'Apikey cannot be blank';
 export const API_KEY_INVALID_MESSAGE = 'Invalid apikey';
 
@@ -10,19 +12,25 @@ const normalizeApiKey = (rawKey: unknown): string | null => {
 	return apiKey.trim();
 };
 
+const getQueryApiKey = (req: any): unknown => req?.query?.apikey ?? req?.query?.apiKey;
+
+const getConfiguredApiKeys = (): string[] =>
+	(process.env.ASHISHDOTME_TOKEN ?? '')
+		.split(',')
+		.map(x => x.trim())
+		.filter(Boolean);
+
 export const extractApiKey = (req: any, apiKeyParam?: string): string | null => {
+	const queryApiKey = getQueryApiKey(req);
 	const headerApiKey = req?.headers?.apikey ?? req?.headers?.apiKey;
-	const rawKey = apiKeyParam ?? headerApiKey;
+	const rawKey = apiKeyParam ?? queryApiKey ?? headerApiKey;
 	const apiKey = normalizeApiKey(rawKey);
 
 	if (!apiKey) {
 		return null;
 	}
 
-	const configuredApiKeys = (process.env.API_KEYS ?? process.env.API_KEY ?? '')
-		.split(',')
-		.map(x => x.trim())
-		.filter(Boolean);
+	const configuredApiKeys = getConfiguredApiKeys();
 
 	if (!configuredApiKeys.length || !configuredApiKeys.includes(apiKey)) {
 		return null;
@@ -32,18 +40,16 @@ export const extractApiKey = (req: any, apiKeyParam?: string): string | null => 
 };
 
 export const getApiKeyError = (req: any, apiKeyParam?: string): string | null => {
+	const queryApiKey = getQueryApiKey(req);
 	const headerApiKey = req?.headers?.apikey ?? req?.headers?.apiKey;
-	const rawKey = apiKeyParam ?? headerApiKey;
+	const rawKey = apiKeyParam ?? queryApiKey ?? headerApiKey;
 	const apiKey = normalizeApiKey(rawKey);
 
 	if (!apiKey) {
 		return API_KEY_MISSING_MESSAGE;
 	}
 
-	const configuredApiKeys = (process.env.API_KEYS ?? process.env.API_KEY ?? '')
-		.split(',')
-		.map(x => x.trim())
-		.filter(Boolean);
+	const configuredApiKeys = getConfiguredApiKeys();
 
 	if (!configuredApiKeys.length || !configuredApiKeys.includes(apiKey)) {
 		return API_KEY_INVALID_MESSAGE;
@@ -66,14 +72,39 @@ export const extractTokenApiKey = (req: any): string | null => {
 		return null;
 	}
 
-	const configuredApiKeys = (process.env.API_KEYS ?? process.env.API_KEY ?? '')
-		.split(',')
-		.map(x => x.trim())
-		.filter(Boolean);
+	const configuredApiKeys = getConfiguredApiKeys();
 
 	if (!configuredApiKeys.length || !configuredApiKeys.includes(normalizedToken)) {
 		return null;
 	}
 
 	return normalizedToken;
+};
+
+export const requireApiKey = (req: any, apiKeyParam?: string): string => {
+	const apiKey = extractApiKey(req, apiKeyParam);
+	if (apiKey) {
+		return apiKey;
+	}
+
+	const error = getApiKeyError(req, apiKeyParam);
+	if (error === API_KEY_INVALID_MESSAGE) {
+		throw new UnauthorizedException(error);
+	}
+
+	throw new BadRequestException(API_KEY_MISSING_MESSAGE);
+};
+
+export const requireTokenApiKey = (req: any): string => {
+	const apiKey = extractTokenApiKey(req);
+	if (apiKey) {
+		return apiKey;
+	}
+
+	const authorization = req?.headers?.authorization;
+	if (typeof authorization === 'string' && authorization.trim()) {
+		throw new UnauthorizedException(API_KEY_INVALID_MESSAGE);
+	}
+
+	throw new BadRequestException(API_KEY_MISSING_MESSAGE);
 };

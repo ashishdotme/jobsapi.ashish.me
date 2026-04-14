@@ -1,9 +1,9 @@
-import { Controller, Request, Post, Body, Query } from '@nestjs/common';
+import { Controller, Request, Post, Body, Query, Get } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiSecurity } from '@nestjs/swagger';
-import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
+import { requireApiKey } from '../common/auth';
 
 @Controller('movies')
 @ApiTags('movies')
@@ -11,12 +11,15 @@ import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
 export class MoviesController {
 	constructor(private readonly moviesService: MoviesService) {}
 
+	@Get()
+	list(@Request() req, @Query('apikey') apiKeyParam: string) {
+		const apiKey = requireApiKey(req, apiKeyParam);
+		return this.moviesService.list(apiKey);
+	}
+
 	@Post()
 	create(@Request() req, @Body() createMovieDto: CreateMovieDto, @Query('apikey') apiKeyParam: string) {
-		const apiKey = extractApiKey(req, apiKeyParam);
-		if (!apiKey) {
-			return { error: API_KEY_MISSING_MESSAGE };
-		}
+		const apiKey = requireApiKey(req, apiKeyParam);
 		return this.moviesService.create(createMovieDto, apiKey);
 	}
 }

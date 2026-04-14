@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { getApiKey, setApiKey } from '../lib/storage'
 
 export const SettingsPage = () => {
@@ -21,41 +25,40 @@ export const SettingsPage = () => {
 
   return (
     <section className="space-y-6">
-      <header>
-        <h2 className="text-3xl font-semibold tracking-tight">Settings</h2>
-        <p className="text-sm text-muted">Configure dashboard runtime settings.</p>
-      </header>
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">Settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Configure dashboard runtime settings.</p>
+      </div>
 
-      <form onSubmit={onSubmit} className="ui-card-solid max-w-xl space-y-4 p-6">
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-ink">API Key</span>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={event => setApiKeyValue(event.target.value)}
-            placeholder="Enter jobsapi API key"
-            className="ui-input"
-          />
-          <p className="mt-2 text-xs text-muted">
-            Stored locally in your browser (localStorage). It is never rendered in logs by the dashboard.
-          </p>
-        </label>
+      <Card className="max-w-xl">
+        <CardHeader>
+          <CardTitle>API Key</CardTitle>
+          <CardDescription>
+            Stored locally in your browser. Never sent to logs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <Input
+              type="password"
+              value={apiKey}
+              onChange={event => setApiKeyValue(event.target.value)}
+              placeholder="Enter jobsapi API key"
+            />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" className="ui-btn-primary">
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={onClear}
-            className="ui-btn border border-border bg-surface2/60 px-4 py-3 text-ink/85 hover:border-accent/25 hover:bg-accent/10"
-          >
-            Clear
-          </button>
-        </div>
+            <div className="flex items-center gap-3">
+              <Button type="submit">Save</Button>
+              <Button type="button" variant="outline" onClick={onClear}>Clear</Button>
+            </div>
 
-        {saved && <div className="rounded-xl border border-good/20 bg-good/10 p-3 text-sm text-good">Saved</div>}
-      </form>
+            {saved && (
+              <Alert className="border-success/20 bg-success/5">
+                <AlertDescription className="text-success">Saved</AlertDescription>
+              </Alert>
+            )}
+          </form>
+        </CardContent>
+      </Card>
     </section>
   )
 }

@@ -1,4 +1,4 @@
-import type { ImportJobSummary, ImportRow, RowStatus } from '../types'
+import type { ImportJobSummary, ImportRow, MediaRecord, RowStatus, UpdatesBridgePost, UpdatesOverview } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 const API_KEY_REQUIRED_MESSAGE = 'Set API key in Settings first'
@@ -51,7 +51,7 @@ export const uploadMovieCsv = async (payload: {
   formData.append('dryRun', String(payload.dryRun))
   formData.append('skipDuplicates', String(payload.skipDuplicates))
 
-  const response = await fetch(buildUrl('/bulk-import/movies', apiKey), {
+  const response = await fetch(buildUrl('/ops/imports/movies', apiKey), {
     method: 'POST',
     headers: {
       apiKey,
@@ -65,7 +65,7 @@ export const uploadMovieCsv = async (payload: {
 export const listJobs = async (apiKey: string, limit = 25, offset = 0): Promise<{ total: number; jobs: ImportJobSummary[] }> => {
   const normalizedApiKey = requireApiKey(apiKey)
   const response = await fetch(
-    buildUrl('/bulk-import/jobs', normalizedApiKey, {
+    buildUrl('/ops/jobs', normalizedApiKey, {
       limit: String(limit),
       offset: String(offset),
     }),
@@ -81,7 +81,7 @@ export const listJobs = async (apiKey: string, limit = 25, offset = 0): Promise<
 
 export const getJob = async (apiKey: string, jobId: string): Promise<ImportJobSummary> => {
   const normalizedApiKey = requireApiKey(apiKey)
-  const response = await fetch(buildUrl(`/bulk-import/jobs/${jobId}`, normalizedApiKey), {
+  const response = await fetch(buildUrl(`/ops/jobs/${jobId}`, normalizedApiKey), {
     headers: {
       apiKey: normalizedApiKey,
     },
@@ -96,7 +96,7 @@ export const getJobRows = async (
 ): Promise<{ total: number; rows: ImportRow[] }> => {
   const normalizedApiKey = requireApiKey(apiKey)
   const response = await fetch(
-    buildUrl(`/bulk-import/jobs/${jobId}/rows`, normalizedApiKey, {
+    buildUrl(`/ops/jobs/${jobId}/rows`, normalizedApiKey, {
       status: options.status ?? '',
       limit: String(options.limit ?? 100),
       offset: String(options.offset ?? 0),
@@ -117,11 +117,98 @@ export const retryFailedRows = async (
   payload: { dryRun: boolean; skipDuplicates: boolean },
 ): Promise<ImportJobSummary> => {
   const normalizedApiKey = requireApiKey(apiKey)
-  const response = await fetch(buildUrl(`/bulk-import/jobs/${jobId}/retry-failed`, normalizedApiKey), {
+  const response = await fetch(buildUrl(`/ops/jobs/${jobId}/retry-failed`, normalizedApiKey), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apiKey: normalizedApiKey },
     body: JSON.stringify(payload),
   })
 
   return parseApiResponse<ImportJobSummary>(response)
+}
+
+export const listMovies = async (apiKey: string): Promise<MediaRecord[]> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/movies', normalizedApiKey), {
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<MediaRecord[]>(response)
+}
+
+export const listShows = async (apiKey: string): Promise<MediaRecord[]> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/shows', normalizedApiKey), {
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<MediaRecord[]>(response)
+}
+
+export const createMovieMetadataBackfill = async (apiKey: string, movieIds: string[]): Promise<ImportJobSummary> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/backfills/movies/metadata', normalizedApiKey), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apiKey: normalizedApiKey },
+    body: JSON.stringify({ movieIds }),
+  })
+
+  return parseApiResponse<ImportJobSummary>(response)
+}
+
+export const createShowMetadataBackfill = async (apiKey: string, showIds: string[]): Promise<ImportJobSummary> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/backfills/shows/metadata', normalizedApiKey), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apiKey: normalizedApiKey },
+    body: JSON.stringify({ showIds }),
+  })
+
+  return parseApiResponse<ImportJobSummary>(response)
+}
+
+export const getUpdatesOverview = async (apiKey: string): Promise<UpdatesOverview> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/updates/overview', normalizedApiKey), {
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<UpdatesOverview>(response)
+}
+
+export const listRecentUpdates = async (apiKey: string, limit = 12): Promise<UpdatesBridgePost[]> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(
+    buildUrl('/ops/updates/posts', normalizedApiKey, {
+      limit: String(limit),
+    }),
+    {
+      headers: {
+        apiKey: normalizedApiKey,
+      },
+    },
+  )
+
+  return parseApiResponse<UpdatesBridgePost[]>(response)
+}
+
+export const startThreadsAuth = async (payload: { apiKey: string; returnTo: string }): Promise<{ authorizationUrl: string }> => {
+  const normalizedApiKey = requireApiKey(payload.apiKey)
+  const response = await fetch(buildUrl('/auth/threads/start', normalizedApiKey), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apiKey: normalizedApiKey,
+    },
+    body: JSON.stringify({
+      returnTo: payload.returnTo,
+    }),
+  })
+
+  return parseApiResponse<{ authorizationUrl: string }>(response)
 }

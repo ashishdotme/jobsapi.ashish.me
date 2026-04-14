@@ -4,7 +4,7 @@ export interface CreateListenDto {
 }
 
 export interface Payload {
-	listened_at: number;
+	listened_at?: number;
 	track_metadata: TrackMetadata;
 }
 

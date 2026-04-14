@@ -1,12 +1,11 @@
-import { Controller, Post, Body, Request, Get, HttpCode } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ListensService } from './listens.service';
 import { CreateListenDto } from './dto/create-listen.dto';
-import { ApiTags, ApiSecurity } from '@nestjs/swagger';
-import { API_KEY_MISSING_MESSAGE, extractTokenApiKey } from '../common/auth';
+import { GetUserListensDto } from './dto/get-user-listens.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('/1')
 @ApiTags('listens')
-@ApiSecurity('apiKey')
 export class ListensController {
 	constructor(private readonly listensService: ListensService) {}
 
@@ -21,11 +20,12 @@ export class ListensController {
 	}
 
 	@Post('submit-listens')
-	create(@Request() req, @Body() createListenDto: CreateListenDto) {
-		const apiKey = extractTokenApiKey(req);
-		if (!apiKey) {
-			return { error: API_KEY_MISSING_MESSAGE };
-		}
-		return this.listensService.create(createListenDto, apiKey);
+	create(@Body() createListenDto: CreateListenDto) {
+		return this.listensService.create(createListenDto);
+	}
+
+	@Get('user/:user/listens')
+	getUserListens(@Param('user') user: string, @Query() query: GetUserListensDto) {
+		return this.listensService.getUserListens(user, query);
 	}
 }

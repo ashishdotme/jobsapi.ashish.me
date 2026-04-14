@@ -15,4 +15,10 @@ export class CreateMovieDto {
 
 	@ApiProperty()
 	loved?: boolean;
+
+	@ApiProperty()
+	posterUrl?: string;
+
+	@ApiProperty()
+	tmdbId?: number;
 }

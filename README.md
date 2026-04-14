@@ -1,280 +1,84 @@
 # jobsapi.ashish.me
 
-Automation wrapper API for inserting enriched records into `api.ashish.me` with minimal manual input.
+Operational wrapper over `api.ashish.me`.
 
-## What This Service Does
+It accepts smaller client payloads, does light parsing/enrichment where needed, proxies catalog reads for the admin UI, and stages long-running work as jobs.
 
-`jobsapi.ashish.me` is a thin ingestion layer that accepts small payloads (for example: movie title + date), enriches them using external sources (OMDb/IMDb), transforms payloads into your canonical schema, and writes them to `api.ashish.me`.
+## Auth
 
-This is designed to reduce manual entry effort for personal tracking.
+Most routes require an API key via `apikey` header or `?apikey=...`.
+The `/1/*` listens endpoints are public.
 
-## Relationship to api.ashish.me
+## ListenBrainz Compatibility
 
-- `api.ashish.me`: source of truth for personal data (movies, shows, steps, sleep, transactions, listens, notes/wiki, locations, todos, etc.)
-- `jobsapi.ashish.me`: helper service that automates data creation and synchronization into `api.ashish.me`
+The fake ListenBrainz endpoints exist so ListenBrainz-compatible clients can scrobble against `jobsapi.ashish.me`.
 
-Detailed documentation for the main API is in `docs/api.ashish.me.md`.
+- `GET /1/user/:user/listens` supports `count`, `min_ts`, and `max_ts`
+- the backend is single-user, so `:user` is accepted for compatibility and is not used to partition data
 
-## Tech Stack
+## Dashboard
 
-- NestJS 10 (TypeScript)
-- Axios for upstream API calls
-- Swagger at `/api`
-- Scheduled jobs via `@nestjs/schedule`
+`GET /dashboard` serves the admin toolbox UI.
 
-## Architecture
+Current workspaces:
 
-1. Client sends small payload to `jobsapi.ashish.me`.
-2. Jobs API validates/minimally parses input.
-3. Jobs API enriches/normalizes data when needed.
-4. Jobs API forwards final payload to `https://api.ashish.me/<resource>` with your API key.
-5. Failures can emit events to `https://api.ashish.me/events`.
+- `Imports` for launching CSV ingestion jobs
+- `Jobs` for monitoring imports and metadata-repair jobs
+- `Movies` for client-side filtering of the full movie catalog and queuing metadata backfill jobs
+- `Shows` for the equivalent show maintenance workflow
+- `Settings` for storing the dashboard API key locally
 
-## Authentication
+The dashboard treats writes as queue-backed operations. Movies and Shows do not mutate records inline; they create background jobs.
 
-Most endpoints require an API key that is forwarded to `api.ashish.me`.
+## Threads Bridge
 
-Supported patterns:
+`jobsapi.ashish.me` now owns the Threads bridge integration:
 
-- Query param: `?apikey=<key>`
-- Header: `apikey: <key>`
-- ListenBrainz-compatible endpoint uses: `Authorization: Token <key>`
+- `POST /auth/threads/start` starts the Threads OAuth flow
+- `GET /auth/threads/callback` handles the Threads redirect URL and stores the long-lived token locally
+- a scheduled bridge polls Threads, writes canonical records to `api.ashish.me /updates`, and publishes them to Bluesky
 
-Current configured keys are read from environment:
+## Jobs Model
 
-- `API_KEYS` (comma-separated), or
-- `API_KEY` (single key)
+Generalized jobs are exposed through `/ops/*`.
 
-If no key is provided, endpoints usually return:
+Current job kinds:
 
-```json
-{ "error": "Apikey cannot be blank" }
-```
+- `import_movies`
+- `import_shows`
+- `backfill_movie_metadata`
+- `backfill_show_metadata`
 
-## Environment Variables
+Legacy `/bulk-import/*` routes still exist for compatibility with older clients.
 
-Create `.env` with:
+## Endpoints
 
-```bash
-OMDB=<omdb_api_key>
-ASHISHDOTME_TOKEN=<api_key_for_todo_sync_job>
-TICKTICK_TOKEN=<ticktick_access_token>
-API_KEYS=<comma_separated_valid_keys>
-BULK_UPLOAD_MAX_BYTES=10485760
-BULK_IMPORT_RATE_LIMIT_PER_MINUTE=120
-DATABASE_URL=<postgres_connection_string_for_bulk_job_storage>
-BULK_IMPORT_REMOTE_DEDUPE=false
-```
-
-When `DATABASE_URL` is set, jobsapi persists bulk import state in:
-
-- `bulk_import_jobs`
-- `bulk_import_rows`
-
-## Run Locally
-
-```bash
-npm install
-npm run build
-npm run start
-```
-
-Service runs on `http://localhost:3000`.
-Swagger UI: `http://localhost:3000/api`
-Dashboard UI: `http://localhost:3000/dashboard`
-
-## Docker
-
-```bash
-docker build -t jobsapi .
-docker run --rm -p 3000:3000 --env-file .env jobsapi
-```
-
-## Endpoint Reference
-
-### `POST /movies`
-
-Minimal payload:
-
-```json
-{
-  "title": "The Social Network",
-  "date": "2026-02-08",
-  "loved": true
-}
-```
-
-Optional fields:
-
-- `date`
-- `startDate`
-- `endDate`
-- `loved`
-
-Behavior:
-
-- Looks up title in OMDb (`http://www.omdbapi.com`)
-- Falls back to `https://imdb.ashish.me` if OMDb fails
-- Builds full movie payload (description, year, genre, IMDb rating/id, viewing date)
-- Writes to `POST https://api.ashish.me/movies`
-
-### `POST /shows`
-
-Minimal payload:
-
-```json
-{
-  "title": "Severance",
-  "seasonNumber": 1,
-  "date": "2026-02-08",
-  "loved": true
-}
-```
-
-Behavior:
-
-- Enriches from OMDb
-- Creates canonical show payload (season title, showName, metadata, startedDate)
-- Writes to `POST https://api.ashish.me/shows`
-
-### `POST /transactions`
-
-Payload:
-
-```json
-{
-  "transaction": "24.99 Starbucks",
-  "date": "2026-02-08T00:00:00.000Z"
-}
-```
-
-Behavior:
-
-- Parses `transaction` into amount + merchant
-- Auto-categorizes by keyword map (`src/data/categories.ts`)
-- Falls back to `Miscellaneous`
-- Writes to `POST https://api.ashish.me/transactions`
-
-### `GET /transactions/total`
-
-Behavior:
-
-- Fetches transactions from `GET https://api.ashish.me/transactions`
-- Returns total spend and per-category totals
-
-Response shape:
-
-```json
-{
-  "total": "1234.56",
-  "categories": {
-    "Food": 120.34,
-    "Transport": 56.78
-  }
-}
-```
-
-### `POST /metrics`
-
-Accepts Apple Health style metrics payload and forwards normalized metrics.
-
-Behavior:
-
-- `step_count` metric -> `POST https://api.ashish.me/steps`
-- `sleep_analysis` metric -> `POST https://api.ashish.me/sleep`
-- Computes sleep duration from `sleepStart` and `sleepEnd`
-
-### `POST /locations`
-
-Payload includes array of location points; only latest point is used.
-
-Behavior:
-
-- Extracts final location record
-- Converts battery level to percentage integer
-- Writes to `POST https://api.ashish.me/locations`
-
-### ListenBrainz-compatible endpoints
-
+- `GET /` - health-style root response
+- `GET /api` - Swagger UI
+- `GET /dashboard` - admin toolbox UI
+- `POST /movies`
+- `GET /movies`
+- `POST /shows`
+- `GET /shows`
+- `POST /transactions`
+- `GET /transactions/total`
+- `POST /metrics`
+- `POST /locations`
 - `GET /1/validate-token`
+- `GET /1/user/:user/listens`
 - `POST /1/submit-listens`
-
-`/1/submit-listens` behavior:
-
-- Parses latest listen payload
-- Maps to `{ title, album, artist, listenDate }`
-- Writes to `POST https://api.ashish.me/listens`
-
-### `POST /wiki`
-
-Payload example:
-
-```json
-{
-  "memo": {
-    "content": "Use partial indexes when cardinality is low"
-  }
-}
-```
-
-Behavior:
-
-- Maps to `{ content, category: "Tech", date }`
-- Writes to `POST https://api.ashish.me/wiki`
-
-### Bulk import (new)
-
-- `POST /bulk-import/movies` (multipart `file` + optional `dryRun`, `skipDuplicates`)
+- `POST /wiki`
+- `POST /auth/threads/start`
+- `GET /auth/threads/callback`
+- `POST /ops/imports/movies`
+- `POST /ops/backfills/movies/metadata`
+- `POST /ops/backfills/shows/metadata`
+- `GET /ops/jobs`
+- `GET /ops/jobs/:jobId`
+- `GET /ops/jobs/:jobId/rows`
+- `POST /ops/jobs/:jobId/retry-failed`
+- `POST /bulk-import/movies`
+- `GET /bulk-import/jobs`
 - `GET /bulk-import/jobs/:jobId`
 - `GET /bulk-import/jobs/:jobId/rows`
 - `POST /bulk-import/jobs/:jobId/retry-failed`
-
-Supported movie CSV source right now: Letterboxd (`Date,Name,Year,Letterboxd URI`).
-
-## Scheduled Sync Job
-
-`TasksService` runs every 60 seconds.
-
-Flow:
-
-1. Pull tasks from TickTick.
-2. Pull incomplete todos from `api.ashish.me`.
-3. Create missing todos in `api.ashish.me`.
-4. Mark todos completed in `api.ashish.me` when TickTick task is completed.
-
-Used endpoints:
-
-- `GET https://api.ashish.me/todos/incomplete`
-- `POST https://api.ashish.me/todos`
-- `POST https://api.ashish.me/todos/:todoId/completed`
-
-## Error Handling + Events
-
-On some ingestion failures, jobs API emits events:
-
-- `create_movie_failed`
-- `create_show_failed`
-- `create_listen_failed`
-- `create_transaction_failed`
-- `create_memo_failed`
-
-Emitted to:
-
-- `POST https://api.ashish.me/events`
-
-## Notes / Current Behavior Details
-
-- `loved` currently defaults to `true` in movie/show payload mapping when omitted.
-- Date randomization is supported for date ranges via `startDate` + optional `endDate`.
-- Most transforms are intentionally lightweight and optimized for low-friction capture.
-
-## Scripts
-
-```bash
-npm run build
-npm run start
-npm run start:dev
-npm run lint
-npm run test
-npm run test:e2e
-```

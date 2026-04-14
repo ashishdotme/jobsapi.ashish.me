@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ImportJob, ImportJobStatus, ImportJobSummary, ImportRow, ImportRowStatus } from './types';
+import { ImportJob, ImportJobStatus, ImportJobSummary, ImportRow, ImportRowStatus, getJobKind } from './types';
 import { BulkImportDbService } from './bulk-import.db.service';
 
 @Injectable()
@@ -204,23 +204,25 @@ export class BulkImportRepository {
 
 		return {
 			total: totalResult.rows[0].total,
-			jobs: jobsResult.rows.map(row => ({
-				id: row.id,
-				type: row.type,
-				source: row.source,
-				status: row.status as ImportJobStatus,
-				fileName: row.file_name,
-				totalRows: row.total_rows,
-				processedRows: row.processed_rows,
-				successRows: row.success_rows,
-				failedRows: row.failed_rows,
-				skippedRows: row.skipped_rows,
-				createdAt: new Date(row.created_at).toISOString(),
-				updatedAt: new Date(row.updated_at).toISOString(),
-				startedAt: row.started_at ? new Date(row.started_at).toISOString() : undefined,
-				completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : undefined,
-				recentErrors: [],
-			})),
+			jobs: jobsResult.rows.map(row =>
+				this.withKind({
+					id: row.id,
+					type: row.type,
+					source: row.source,
+					status: row.status as ImportJobStatus,
+					fileName: row.file_name,
+					totalRows: row.total_rows,
+					processedRows: row.processed_rows,
+					successRows: row.success_rows,
+					failedRows: row.failed_rows,
+					skippedRows: row.skipped_rows,
+					createdAt: new Date(row.created_at).toISOString(),
+					updatedAt: new Date(row.updated_at).toISOString(),
+					startedAt: row.started_at ? new Date(row.started_at).toISOString() : undefined,
+					completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : undefined,
+					recentErrors: [],
+				}),
+			),
 		};
 	}
 
@@ -230,7 +232,7 @@ export class BulkImportRepository {
 			.slice(-20)
 			.map(row => ({ rowNumber: row.rowNumber, errorCode: row.errorCode, errorMessage: row.errorMessage }));
 
-		return {
+		return this.withKind({
 			id: job.id,
 			type: job.type,
 			source: job.source,
@@ -246,6 +248,13 @@ export class BulkImportRepository {
 			startedAt: job.startedAt,
 			completedAt: job.completedAt,
 			recentErrors,
+		});
+	}
+
+	private withKind(job: Omit<ImportJobSummary, 'kind'> & Partial<Pick<ImportJobSummary, 'kind'>>): ImportJobSummary {
+		return {
+			...job,
+			kind: job.kind ?? getJobKind(job.type, job.source),
 		};
 	}
 }

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import axios from 'axios';
 import { sendEvent } from '../common/utils';
+import { formatLogMessage, getErrorMessage, getErrorStack } from '../common/logging';
 
 @Injectable()
 export class LocationsService {
@@ -9,7 +10,7 @@ export class LocationsService {
 
 	async create(createLocationDto: CreateLocationDto, apiKey: string) {
 		if (!createLocationDto.locations?.length) {
-			this.logger.warn('Location creation rejected: empty locations array');
+			this.logger.warn(formatLogMessage('location.create.rejected', { reason: 'empty_locations', payload: createLocationDto }));
 			return { error: 'Locations cannot be blank' };
 		}
 
@@ -27,8 +28,8 @@ export class LocationsService {
 			return { result: 'ok' };
 		} catch (error) {
 			await sendEvent('create_location_failed', JSON.stringify(newLocation));
-			this.logger.error(`Location creation failed: ${error.message}`, error.stack);
-			return { error: `Failed to create location - ${error.message}` };
+			this.logger.error(formatLogMessage('location.create.failed', { payload: newLocation, errorMessage: getErrorMessage(error) }), getErrorStack(error));
+			return { error: `Failed to create location - ${getErrorMessage(error)}` };
 		}
 	}
 

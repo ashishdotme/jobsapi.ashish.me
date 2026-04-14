@@ -1,91 +1,249 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { listJobs } from '../lib/api'
+import { getJobKindMeta, getJobProgressValue } from '../lib/jobs'
 import { getApiKey } from '../lib/storage'
-import type { ImportJobSummary } from '../types'
+import type { ImportJobSummary, JobStatus } from '../types'
+import { StatCard } from '../components/StatCard'
 import { StatusPill } from '../components/StatusPill'
+
+const REFRESH_INTERVAL_MS = 10000
+
+type KindFilter = 'all' | 'imports' | 'movie_metadata' | 'show_metadata'
 
 export const JobsPage = () => {
   const [jobs, setJobs] = useState<ImportJobSummary[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | JobStatus>('all')
 
   useEffect(() => {
+    let active = true
+
     const run = async () => {
       const apiKey = getApiKey()
       if (!apiKey) {
-        setError('Set API key in Settings to load job history')
+        if (!active) {
+          return
+        }
+
+        setError('Set the API key in Settings to load the operations queue')
         setLoading(false)
         return
       }
 
       try {
-        const response = await listJobs(apiKey, 50, 0)
+        const response = await listJobs(apiKey, 100, 0)
+        if (!active) {
+          return
+        }
+
         setJobs(response.jobs)
+        setError('')
       } catch (err) {
+        if (!active) {
+          return
+        }
+
         setError(err instanceof Error ? err.message : 'Failed to load jobs')
       } finally {
-        setLoading(false)
+        if (active) {
+          setLoading(false)
+        }
       }
     }
 
     void run()
+    const intervalId = window.setInterval(() => void run(), REFRESH_INTERVAL_MS)
+
+    return () => {
+      active = false
+      window.clearInterval(intervalId)
+    }
   }, [])
+
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      const matchesKind =
+        kindFilter === 'all'
+          ? true
+          : kindFilter === 'imports'
+            ? job.kind === 'import_movies' || job.kind === 'import_shows'
+            : kindFilter === 'movie_metadata'
+              ? job.kind === 'backfill_movie_metadata'
+              : job.kind === 'backfill_show_metadata'
+
+      const matchesStatus = statusFilter === 'all' ? true : job.status === statusFilter
+
+      return matchesKind && matchesStatus
+    })
+  }, [jobs, kindFilter, statusFilter])
+
+  const summary = useMemo(
+    () => ({
+      queued: filteredJobs.filter(job => job.status === 'queued').length,
+      processing: filteredJobs.filter(job => job.status === 'processing').length,
+      attention: filteredJobs.filter(job => job.status === 'failed' || job.status === 'partial').length,
+      completed: filteredJobs.filter(job => job.status === 'completed').length,
+    }),
+    [filteredJobs],
+  )
 
   return (
     <section className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight">Jobs</h2>
-          <p className="text-sm text-muted">Recent bulk imports and their outcomes.</p>
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Queue unavailable</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 rounded-xl" />
+          ))}
         </div>
-      </header>
-
-      {loading && <div className="text-sm text-muted">Loading...</div>}
-      {error && <div className="rounded-xl border border-bad/20 bg-bad/10 p-3 text-sm text-bad">{error}</div>}
-
-      {!loading && !error && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface/70 shadow-uiTight">
-          <table className="ui-table">
-            <thead>
-              <tr>
-                <th className="ui-th">File</th>
-                <th className="ui-th">Status</th>
-                <th className="ui-th">Rows</th>
-                <th className="ui-th">Created</th>
-                <th className="ui-th">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map(job => (
-                <tr key={job.id} className="ui-tr">
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-ink">{job.fileName}</div>
-                    <div className="mt-1 font-mono text-xs text-muted">{job.id}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusPill status={job.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="font-semibold">{job.processedRows}</span> / {job.totalRows}
-                  </td>
-                  <td className="px-4 py-3 text-muted">{new Date(job.createdAt).toLocaleString()}</td>
-                  <td className="px-4 py-3">
-                    <Link
-                      to={`/jobs/${job.id}`}
-                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface2/60 px-3 py-1.5 text-xs font-semibold text-ink/90 hover:border-accent/30 hover:bg-accent/10"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {!jobs.length && <div className="p-8 text-center text-sm text-muted">No jobs yet.</div>}
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Queued" value={summary.queued} tone="neutral" />
+          <StatCard label="Processing" value={summary.processing} tone="neutral" />
+          <StatCard label="Needs Attention" value={summary.attention} tone="bad" />
+          <StatCard label="Completed" value={summary.completed} tone="good" />
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Operations queue</CardTitle>
+          <CardDescription>
+            Imports and metadata repair jobs share one execution log.
+          </CardDescription>
+          <CardAction>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/imports">Launch new import</Link>
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <Tabs value={kindFilter} onValueChange={value => setKindFilter(value as KindFilter)} className="w-full xl:w-auto">
+              <TabsList className="grid w-full grid-cols-4 xl:w-[520px]">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="imports">Imports</TabsTrigger>
+                <TabsTrigger value="movie_metadata">Movie Metadata</TabsTrigger>
+                <TabsTrigger value="show_metadata">Show Metadata</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <Select value={statusFilter} onValueChange={value => setStatusFilter(value as 'all' | JobStatus)}>
+              <SelectTrigger className="w-full xl:w-[200px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="queued">Queued</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+        <CardContent>
+          <div className="overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Station</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Rows</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="text-right">Open</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredJobs.map(job => {
+                  const meta = getJobKindMeta(job.kind)
+                  const progressValue = getJobProgressValue(job)
+
+                  return (
+                    <TableRow key={job.id}>
+                      <TableCell className="align-top">
+                        <div className="flex items-start gap-3">
+                          <Badge variant="secondary" className="mt-0.5">{meta.station}</Badge>
+                          <div className="space-y-1">
+                            <div className="font-medium">{job.fileName}</div>
+                            <div className="text-sm text-muted-foreground">{meta.label}</div>
+                            <div className="font-mono text-xs text-muted-foreground">{job.id}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <StatusPill status={job.status} />
+                        {job.recentErrors.length > 0 && (
+                          <div className="mt-2 text-xs text-danger">
+                            {job.recentErrors.length} recent error{job.recentErrors.length === 1 ? '' : 's'}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="min-w-[200px] align-top">
+                        <div className="space-y-2">
+                          <Progress value={progressValue} className="h-2" />
+                          <div className="text-xs text-muted-foreground">{progressValue}%</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top text-sm text-muted-foreground">
+                        <div>{job.processedRows} / {job.totalRows}</div>
+                        <div>{job.successRows} ok · {job.failedRows} fail · {job.skippedRows} skip</div>
+                      </TableCell>
+                      <TableCell className="align-top text-sm text-muted-foreground">
+                        {new Date(job.updatedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right align-top">
+                        <Button asChild variant="outline" size="sm">
+                          <Link to={`/jobs/${job.id}`}>Inspect</Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+
+            {!loading && !filteredJobs.length && (
+              <div className="p-10 text-center text-sm text-muted-foreground">
+                No jobs match the current filters.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </section>
   )
 }

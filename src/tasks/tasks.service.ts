@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import TickTick from './helpers/ticktick/ticktick';
 import axios from 'axios';
 import { Task } from './helpers/ticktick/task';
+import { formatLogMessage, getErrorMessage, getErrorStack } from '../common/logging';
 
 @Injectable()
 export class TasksService {
@@ -16,7 +17,7 @@ export class TasksService {
 	@Interval(60000)
 	async handleInterval() {
 		if (!this.apiKey) {
-			this.logger.warn('Skipping TickTick sync: ASHISHDOTME_TOKEN is not configured');
+			this.logger.warn(formatLogMessage('tasks.sync.skipped', { reason: 'missing_api_key' }));
 			return;
 		}
 
@@ -37,9 +38,9 @@ export class TasksService {
 						todoId: ticktickTask.id,
 					};
 					await this.postTodo(newTodo, this.apiKey);
-					this.logger.log('Successfully created task from TickTick to api.ashish.me');
+					this.logger.log(formatLogMessage('tasks.sync.created', { payload: newTodo }));
 				} catch (error) {
-					this.logger.error(`Failed to create new task: ${error.message}`);
+					this.logger.error(formatLogMessage('tasks.sync.create_failed', { ticktickTask, errorMessage: getErrorMessage(error) }), getErrorStack(error));
 				}
 			}
 
@@ -51,14 +52,14 @@ export class TasksService {
 					}
 					if (ticktickTask.status === 2 || (ticktickTask.items && ticktickTask.items[0].status) === 1) {
 						await this.completeTodo(todo.id, this.apiKey);
-						this.logger.log('Successfully completed task');
+						this.logger.log(formatLogMessage('tasks.sync.completed', { payload: todo }));
 					}
 				} catch (error) {
-					this.logger.error(`Failed to complete task: ${error.message}`);
+					this.logger.error(formatLogMessage('tasks.sync.complete_failed', { payload: todo, errorMessage: getErrorMessage(error) }), getErrorStack(error));
 				}
 			}
 		} catch (error) {
-			this.logger.error(`TickTick sync iteration failed: ${error.message}`);
+			this.logger.error(formatLogMessage('tasks.sync.failed', { errorMessage: getErrorMessage(error) }), getErrorStack(error));
 		}
 	}
 

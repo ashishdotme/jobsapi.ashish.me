@@ -3,53 +3,73 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import * as _ from 'lodash';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { sendEvent, fetchDetailsFromOmdb, fetchDetailsFromImdb } from '../common/utils';
+import { sendEvent } from '../common/utils';
+import { formatLogMessage, getErrorMessage, getErrorStack } from '../common/logging';
+import { MediaDetails, MetadataResolver, TmdbProvider, OmdbProvider, ImdbProvider } from '../common/media-metadata';
 
 @Injectable()
 export class MoviesService {
 	private readonly logger = new Logger(MoviesService.name);
-	private OMDB_APIKEY: string = this.configService.get<string>('OMDB');
+	private readonly upstreamApiKey: string | undefined = this.configService.get<string>('ASHISHDOTME_TOKEN');
+	private readonly resolver: MetadataResolver;
 
-	constructor(private configService: ConfigService) {}
+	constructor(private configService: ConfigService) {
+		this.resolver = new MetadataResolver([
+			new TmdbProvider(this.configService.get<string>('TMDB_API_KEY')),
+			new OmdbProvider(this.configService.get<string>('OMDB')),
+			new ImdbProvider(),
+		]);
+	}
+
+	private resolveUpstreamApiKey(apiKey: string): string {
+		return this.upstreamApiKey?.trim() || apiKey;
+	}
 
 	randomDate(start, end) {
 		end = _.isUndefined(end) ? new Date() : new Date(end);
 		return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 	}
 
+	async list(apikey: string): Promise<any[]> {
+		const upstreamApiKey = this.resolveUpstreamApiKey(apikey);
+		const response = await axios.get('https://api.ashish.me/movies', {
+			headers: {
+				apiKey: upstreamApiKey,
+			},
+		});
+		return response.data;
+	}
+
 	async create(createMovieDto: CreateMovieDto, apikey: string): Promise<any> {
 		if (_.isEmpty(createMovieDto.title)) {
-			this.logger.warn('Movie creation rejected: title is blank');
+			this.logger.warn(formatLogMessage('movie.create.rejected', { reason: 'blank_title', payload: createMovieDto }));
 			return { error: 'Title cannot be blank' };
 		}
 
-		const viewingDate = this.calculateViewingDate(createMovieDto);
 		try {
-			let movieDetails = await fetchDetailsFromOmdb(createMovieDto.title, this.OMDB_APIKEY);
-			let moviePayload: any = null;
-
-			if (movieDetails) {
-				moviePayload = this.buildNewMoviePayloadFromOmdb(createMovieDto, movieDetails, viewingDate);
+			if (await this.movieExists(createMovieDto.title, apikey)) {
+				this.logger.warn(formatLogMessage('movie.create.skipped', { reason: 'duplicate_title', title: createMovieDto.title }));
+				return { error: 'Movie already exists' };
 			}
 
-			if (!moviePayload) {
-				movieDetails = await fetchDetailsFromImdb(createMovieDto.title);
-				if (movieDetails) {
-					moviePayload = this.buildNewMoviePayloadFromImdb(createMovieDto, movieDetails, viewingDate);
-				}
-			}
+			const viewingDate = this.calculateViewingDate(createMovieDto);
+			const details = await this.resolver.resolve(createMovieDto.title, 'movie');
 
-			if (!moviePayload) {
+			if (!details) {
 				await sendEvent('create_movie_failed', createMovieDto.title);
-				this.logger.warn(`Movie creation failed: no metadata found for "${createMovieDto.title}"`);
+				this.logger.warn(formatLogMessage('movie.create.failed', { reason: 'metadata_not_found', title: createMovieDto.title, payload: createMovieDto }));
 				return { error: `Failed to create movie - Movie not found` };
 			}
 
+			const moviePayload = this.buildMoviePayload(createMovieDto, details, viewingDate);
 			return await this.postNewMovie(moviePayload, apikey);
-		} catch (e) {
+		} catch (error) {
 			await sendEvent('create_movie_failed', createMovieDto.title);
-			this.logger.error(`Movie creation failed for "${createMovieDto.title}": ${e.message}`, e.stack);
-			return { error: `Failed to create movie - ${e.message}` };
+			this.logger.error(
+				formatLogMessage('movie.create.failed', { title: createMovieDto.title, payload: createMovieDto, errorMessage: getErrorMessage(error) }),
+				getErrorStack(error),
+			);
+			return { error: `Failed to create movie - ${getErrorMessage(error)}` };
 		}
 	}
 
@@ -61,36 +81,19 @@ export class MoviesService {
 		return viewingDate;
 	}
 
-	private buildNewMoviePayloadFromOmdb(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
-		const ratingValue = _.get(movieDetails, 'Ratings[0].Value', '0/10');
-		const imdbRating = Number(ratingValue.split('/')[0]);
-		const parsedYear = Number(movieDetails.Year);
+	private buildMoviePayload(dto: CreateMovieDto, details: MediaDetails, viewingDate: Date): any {
 		return {
-			title: movieDetails.Title,
-			description: movieDetails.Plot,
-			language: 'English',
-			year: Number.isFinite(parsedYear) ? parsedYear : 0,
-			genre: movieDetails.Genre,
+			title: details.title,
+			description: details.description,
+			language: details.language,
+			year: details.year,
+			genre: details.genre,
 			viewingDate: viewingDate,
-			imdbRating: Number.isFinite(imdbRating) ? imdbRating : 0,
-			imdbId: movieDetails.imdbID,
-			loved: createMovieDto.loved ?? true,
-		};
-	}
-
-	private buildNewMoviePayloadFromImdb(createMovieDto: CreateMovieDto, movieDetails: any, viewingDate: Date): any {
-		const rating = Number(_.get(movieDetails, 'rating.star', 0));
-		const genres = _.get(movieDetails, 'genre', []);
-		return {
-			title: movieDetails.title,
-			description: movieDetails.plot,
-			language: _.get(movieDetails, 'spokenLanguages[0].language', 'Unknown'),
-			year: Number(movieDetails.year),
-			genre: Array.isArray(genres) ? genres.join(', ') : '',
-			viewingDate: viewingDate,
-			imdbRating: Number.isFinite(rating) ? rating : 0,
-			imdbId: movieDetails.id,
-			loved: createMovieDto.loved ?? true,
+			imdbRating: details.rating,
+			imdbId: details.imdbId,
+			posterUrl: dto.posterUrl ?? details.posterUrl,
+			tmdbId: dto.tmdbId ?? details.tmdbId,
+			loved: dto.loved ?? true,
 		};
 	}
 
@@ -102,5 +105,16 @@ export class MoviesService {
 		};
 		const response = await axios.post('https://api.ashish.me/movies', newMovie, config);
 		return response.data;
+	}
+
+	private async movieExists(title: string, apikey: string): Promise<boolean> {
+		const normalizedTitle = title.trim().toLowerCase();
+		const response = await axios.get('https://api.ashish.me/movies', {
+			headers: {
+				apiKey: apikey,
+			},
+		});
+
+		return (response.data ?? []).some(movie => typeof movie?.title === 'string' && movie.title.trim().toLowerCase() === normalizedTitle);
 	}
 }

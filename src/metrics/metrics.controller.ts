@@ -1,17 +1,16 @@
-import { Controller, Post, Request, Body, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, Query, Request, Post } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
-import { API_KEY_MISSING_MESSAGE, extractApiKey } from '../common/auth';
+import { requireApiKey } from '../common/auth';
+import { CreateMetricDto } from './dto/create-metric.dto';
 
 @Controller('metrics')
 export class MetricsController {
 	constructor(private readonly metricsService: MetricsService) {}
 
 	@Post()
-	create(@Request() req, @Body() createStepDto: any, @Query('apikey') apiKeyParam: string) {
-		const apiKey = extractApiKey(req, apiKeyParam);
-		if (!apiKey) {
-			return { error: API_KEY_MISSING_MESSAGE };
-		}
+	@HttpCode(200)
+	create(@Request() req, @Body() createStepDto: CreateMetricDto, @Query('apikey') apiKeyParam: string) {
+		const apiKey = requireApiKey(req, apiKeyParam);
 		return this.metricsService.create(createStepDto, apiKey);
 	}
 }
