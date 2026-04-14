@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { getUpdatesOverview, listRecentUpdates, startThreadsAuth } from '@/lib/api'
+import { getUpdatesOverview, listRecentUpdates, startThreadsAuth, syncUpdatesNow } from '@/lib/api'
 import { getApiKey } from '@/lib/storage'
 import type { UpdatesBridgePost, UpdatesOverview } from '@/types'
 
@@ -53,6 +53,7 @@ export const UpdatesPage = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   const apiKey = getApiKey()
   const threadsConnected = searchParams.get('threads') === 'connected'
@@ -135,6 +136,44 @@ export const UpdatesPage = () => {
     }
   }
 
+  const refreshWorkspace = async () => {
+    if (!apiKey) {
+      setLoading(false)
+      setError('Set the API key in Settings to load the updates bridge workspace')
+      return
+    }
+
+    const [overviewResponse, postsResponse] = await Promise.all([
+      getUpdatesOverview(apiKey),
+      listRecentUpdates(apiKey, 12),
+    ])
+
+    setOverview(overviewResponse)
+    setPosts(postsResponse)
+  }
+
+  const onSyncNow = async () => {
+    if (!apiKey) {
+      setError('Set the API key in Settings before starting a manual sync')
+      return
+    }
+
+    setSyncing(true)
+    setError('')
+
+    try {
+      const result = await syncUpdatesNow(apiKey)
+      if (result.status === 'already_running') {
+        setError('A sync is already running')
+      }
+      await refreshWorkspace()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start manual sync')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-2">
@@ -208,9 +247,14 @@ export const UpdatesPage = () => {
                   <div>Bootstrap since: <span className="font-mono text-foreground">{overview?.threads.bootstrapSince ?? 'Not set'}</span></div>
                 </div>
                 <div className="mt-4">
-                  <Button onClick={() => void onConnect()} disabled={connecting}>
-                    {connecting ? 'Redirecting...' : overview?.threads.connected ? 'Reconnect Threads' : 'Connect Threads'}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => void onConnect()} disabled={connecting}>
+                      {connecting ? 'Redirecting...' : overview?.threads.connected ? 'Reconnect Threads' : 'Connect Threads'}
+                    </Button>
+                    <Button variant="outline" onClick={() => void onSyncNow()} disabled={syncing || !overview?.threads.connected}>
+                      {syncing ? 'Syncing...' : 'Sync now'}
+                    </Button>
+                  </div>
                 </div>
               </div>
 

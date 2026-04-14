@@ -277,4 +277,21 @@ describe('UpdatesBridgeService', () => {
 		expect(repository.listRecentPosts).toHaveBeenCalledWith(2);
 		expect(recent).toEqual(rows);
 	});
+
+	it('returns already_running when a manual sync is requested during processing', async () => {
+		(service as any).processing = true;
+
+		const result = await service.triggerManualSync();
+
+		expect(result).toEqual({ accepted: false, status: 'already_running' });
+	});
+
+	it('runs the sync immediately when manual sync is requested', async () => {
+		repository.getActiveIntegration.mockResolvedValue(null);
+
+		const result = await service.triggerManualSync();
+
+		expect(result).toEqual({ accepted: true, status: 'started' });
+		expect(repository.getActiveIntegration).toHaveBeenCalled();
+	});
 });

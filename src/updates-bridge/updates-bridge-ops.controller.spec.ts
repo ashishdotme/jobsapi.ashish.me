@@ -5,6 +5,7 @@ describe('UpdatesBridgeOpsController', () => {
 	let service: {
 		getOverview: jest.Mock;
 		getRecentPosts: jest.Mock;
+		triggerManualSync: jest.Mock;
 	};
 
 	beforeEach(() => {
@@ -12,6 +13,7 @@ describe('UpdatesBridgeOpsController', () => {
 		service = {
 			getOverview: jest.fn(),
 			getRecentPosts: jest.fn(),
+			triggerManualSync: jest.fn(),
 		};
 		controller = new UpdatesBridgeOpsController(service as any);
 	});
@@ -45,5 +47,17 @@ describe('UpdatesBridgeOpsController', () => {
 
 		expect(service.getRecentPosts).toHaveBeenCalledWith(25);
 		expect(result).toEqual([{ id: 'post-1' }]);
+	});
+
+	it('starts a manual sync when an api key is present', async () => {
+		service.triggerManualSync.mockResolvedValue({ accepted: true, status: 'started' });
+
+		const result = await controller.triggerSync({
+			headers: { apikey: 'test-key' },
+			query: {},
+		} as any);
+
+		expect(service.triggerManualSync).toHaveBeenCalled();
+		expect(result).toEqual({ accepted: true, status: 'started' });
 	});
 });

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req } from '@nestjs/common';
 import { requireApiKey } from '../common/auth';
 import { UpdatesBridgeService } from './updates-bridge.service';
 
@@ -18,5 +18,11 @@ export class UpdatesBridgeOpsController {
 		const parsedLimit = Number.parseInt(limit ?? '20', 10);
 		const safeLimit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 100) : 20;
 		return this.updatesBridgeService.getRecentPosts(safeLimit);
+	}
+
+	@Post('sync')
+	async triggerSync(@Req() req: any) {
+		requireApiKey(req);
+		return this.updatesBridgeService.triggerManualSync();
 	}
 }

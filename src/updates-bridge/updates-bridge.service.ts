@@ -66,6 +66,15 @@ export class UpdatesBridgeService {
 		}
 	}
 
+	async triggerManualSync(): Promise<{ accepted: boolean; status: 'started' | 'already_running' }> {
+		if (this.processing) {
+			return { accepted: false, status: 'already_running' };
+		}
+
+		await this.runScheduledSync();
+		return { accepted: true, status: 'started' };
+	}
+
 	async getOverview(): Promise<UpdatesBridgeOverview> {
 		const [integration, checkpoint, delivery] = await Promise.all([
 			this.repository.getActiveIntegration(),

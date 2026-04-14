@@ -212,3 +212,15 @@ export const startThreadsAuth = async (payload: { apiKey: string; returnTo: stri
 
   return parseApiResponse<{ authorizationUrl: string }>(response)
 }
+
+export const syncUpdatesNow = async (apiKey: string): Promise<{ accepted: boolean; status: 'started' | 'already_running' }> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/updates/sync', normalizedApiKey), {
+    method: 'POST',
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<{ accepted: boolean; status: 'started' | 'already_running' }>(response)
+}
