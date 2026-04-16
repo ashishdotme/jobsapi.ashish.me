@@ -21,14 +21,9 @@ describe('UpdatesBridgeController', () => {
 	});
 
 	it('requires an api key when starting the threads oauth flow', async () => {
-		authService.createAuthorizationUrl.mockResolvedValue(
-			'https://threads.net/oauth/authorize?state=state-1',
-		);
+		authService.createAuthorizationUrl.mockResolvedValue('https://threads.net/oauth/authorize?state=state-1');
 
-		const result = await controller.startThreadsAuth(
-			{ headers: { apikey: 'test-key' }, query: {} } as any,
-			'/dashboard/settings',
-		);
+		const result = await controller.startThreadsAuth({ headers: { apikey: 'test-key' }, query: {} } as any, '/dashboard/settings');
 
 		expect(result).toEqual({
 			authorizationUrl: 'https://threads.net/oauth/authorize?state=state-1',
@@ -41,8 +36,6 @@ describe('UpdatesBridgeController', () => {
 
 		await controller.handleThreadsCallback('code-1', 'state-1', res as any);
 
-		expect(res.redirect).toHaveBeenCalledWith(
-			'/dashboard/settings?threads=connected',
-		);
+		expect(res.redirect).toHaveBeenCalledWith('/dashboard/settings?threads=connected');
 	});
 });

@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { selectApiKey, useAuthStore } from '@/state/auth-store'
 import { getUpdatesOverview, listRecentUpdates, retryFailedUpdatesDeliveries, startThreadsAuth, syncUpdatesNow } from '@/lib/api'
-import { getApiKey } from '@/lib/storage'
 import type { UpdatesBridgePost, UpdatesOverview } from '@/types'
 
 const REFRESH_INTERVAL_MS = 15000
@@ -47,6 +47,7 @@ const renderBlueskyState = (overview: UpdatesOverview | null) => {
 }
 
 export const UpdatesPage = () => {
+  const apiKey = useAuthStore(selectApiKey)
   const [searchParams] = useSearchParams()
   const [overview, setOverview] = useState<UpdatesOverview | null>(null)
   const [posts, setPosts] = useState<UpdatesBridgePost[]>([])
@@ -56,7 +57,6 @@ export const UpdatesPage = () => {
   const [syncing, setSyncing] = useState(false)
   const [retryingFailed, setRetryingFailed] = useState(false)
 
-  const apiKey = getApiKey()
   const threadsConnected = searchParams.get('threads') === 'connected'
 
   useEffect(() => {

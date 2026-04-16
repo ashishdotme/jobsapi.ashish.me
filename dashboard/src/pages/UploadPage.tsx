@@ -8,14 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { selectApiKey, selectIsAuthenticated, useAuthStore } from '@/state/auth-store'
 import { listJobs, uploadMovieCsv } from '../lib/api'
 import { getJobKindMeta } from '../lib/jobs'
-import { getApiKey } from '../lib/storage'
 import type { ImportJobSummary } from '../types'
 import { StatusPill } from '../components/StatusPill'
 
 export const UploadPage = () => {
   const navigate = useNavigate()
+  const apiKey = useAuthStore(selectApiKey)
+  const hasApiKey = useAuthStore(selectIsAuthenticated)
   const [file, setFile] = useState<File | null>(null)
   const [dryRun, setDryRun] = useState(false)
   const [skipDuplicates, setSkipDuplicates] = useState(true)
@@ -24,11 +26,10 @@ export const UploadPage = () => {
   const [recentJobs, setRecentJobs] = useState<ImportJobSummary[]>([])
   const [loadingRecent, setLoadingRecent] = useState(true)
 
-  const apiKeyMissing = useMemo(() => !getApiKey(), [])
+  const apiKeyMissing = useMemo(() => !hasApiKey, [hasApiKey])
 
   useEffect(() => {
     const run = async () => {
-      const apiKey = getApiKey()
       if (!apiKey) {
         setRecentJobs([])
         setLoadingRecent(false)
@@ -46,7 +47,7 @@ export const UploadPage = () => {
     }
 
     void run()
-  }, [])
+  }, [apiKey])
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -55,7 +56,6 @@ export const UploadPage = () => {
       return
     }
 
-    const apiKey = getApiKey()
     if (!apiKey) {
       setError('Set the API key in Settings before launching a job')
       return

@@ -13,29 +13,27 @@ describe('TmdbProvider', () => {
 	});
 
 	it('searches /search/movie for movie type and normalizes result', async () => {
-		mockedAxios.get
-			.mockResolvedValueOnce({ data: { results: [{ id: 603 }] } } as any)
-			.mockResolvedValueOnce({
-				data: {
-					id: 603,
-					title: 'The Matrix',
-					overview: 'A hacker discovers reality is a simulation.',
-					release_date: '1999-03-30',
-					genres: [{ id: 28, name: 'Action' }, { id: 878, name: 'Science Fiction' }],
-					vote_average: 8.7,
-					imdb_id: 'tt0133093',
-					original_language: 'en',
-					poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
-				},
-			} as any);
+		mockedAxios.get.mockResolvedValueOnce({ data: { results: [{ id: 603 }] } } as any).mockResolvedValueOnce({
+			data: {
+				id: 603,
+				title: 'The Matrix',
+				overview: 'A hacker discovers reality is a simulation.',
+				release_date: '1999-03-30',
+				genres: [
+					{ id: 28, name: 'Action' },
+					{ id: 878, name: 'Science Fiction' },
+				],
+				vote_average: 8.7,
+				imdb_id: 'tt0133093',
+				original_language: 'en',
+				poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+			},
+		} as any);
 
 		const provider = new TmdbProvider('tmdb-token');
 		const result = await provider.fetch('The Matrix', 'movie');
 
-		expect(mockedAxios.get).toHaveBeenCalledWith(
-			'https://api.themoviedb.org/3/search/movie',
-			expect.objectContaining({ params: { query: 'The Matrix', include_adult: 'false' } }),
-		);
+		expect(mockedAxios.get).toHaveBeenCalledWith('https://api.themoviedb.org/3/search/movie', expect.objectContaining({ params: { query: 'The Matrix', include_adult: 'false' } }));
 		expect(result).toEqual({
 			title: 'The Matrix',
 			description: 'A hacker discovers reality is a simulation.',
@@ -50,29 +48,24 @@ describe('TmdbProvider', () => {
 	});
 
 	it('searches /search/tv for show type and uses name + first_air_date', async () => {
-		mockedAxios.get
-			.mockResolvedValueOnce({ data: { results: [{ id: 95396 }] } } as any)
-			.mockResolvedValueOnce({
-				data: {
-					id: 95396,
-					name: 'Severance',
-					overview: 'Office workers undergo a surgical procedure.',
-					first_air_date: '2022-02-18',
-					genres: [{ id: 18, name: 'Drama' }],
-					vote_average: 8.7,
-					external_ids: { imdb_id: 'tt11280740' },
-					original_language: 'en',
-					poster_path: '/severance.jpg',
-				},
-			} as any);
+		mockedAxios.get.mockResolvedValueOnce({ data: { results: [{ id: 95396 }] } } as any).mockResolvedValueOnce({
+			data: {
+				id: 95396,
+				name: 'Severance',
+				overview: 'Office workers undergo a surgical procedure.',
+				first_air_date: '2022-02-18',
+				genres: [{ id: 18, name: 'Drama' }],
+				vote_average: 8.7,
+				external_ids: { imdb_id: 'tt11280740' },
+				original_language: 'en',
+				poster_path: '/severance.jpg',
+			},
+		} as any);
 
 		const provider = new TmdbProvider('tmdb-token');
 		const result = await provider.fetch('Severance', 'show');
 
-		expect(mockedAxios.get).toHaveBeenCalledWith(
-			'https://api.themoviedb.org/3/search/tv',
-			expect.objectContaining({ params: { query: 'Severance' } }),
-		);
+		expect(mockedAxios.get).toHaveBeenCalledWith('https://api.themoviedb.org/3/search/tv', expect.objectContaining({ params: { query: 'Severance' } }));
 		expect(result).toEqual({
 			title: 'Severance',
 			description: 'Office workers undergo a surgical procedure.',
@@ -87,20 +80,18 @@ describe('TmdbProvider', () => {
 	});
 
 	it('maps non-English ISO language codes to full names', async () => {
-		mockedAxios.get
-			.mockResolvedValueOnce({ data: { results: [{ id: 1 }] } } as any)
-			.mockResolvedValueOnce({
-				data: {
-					id: 1,
-					title: 'Parasite',
-					overview: 'Greed and class discrimination.',
-					release_date: '2019-05-30',
-					genres: [],
-					vote_average: 8.6,
-					original_language: 'ko',
-					poster_path: null,
-				},
-			} as any);
+		mockedAxios.get.mockResolvedValueOnce({ data: { results: [{ id: 1 }] } } as any).mockResolvedValueOnce({
+			data: {
+				id: 1,
+				title: 'Parasite',
+				overview: 'Greed and class discrimination.',
+				release_date: '2019-05-30',
+				genres: [],
+				vote_average: 8.6,
+				original_language: 'ko',
+				poster_path: null,
+			},
+		} as any);
 
 		const result = await new TmdbProvider('token').fetch('Parasite', 'movie');
 
@@ -311,11 +302,9 @@ describe('ImdbProvider', () => {
 	});
 
 	it('falls back to Unknown language when no spoken languages', async () => {
-		mockedAxios.get
-			.mockResolvedValueOnce({ data: { results: [{ id: 'tt1', year: 2020 }] } } as any)
-			.mockResolvedValueOnce({
-				data: { id: 'tt1', title: 'Test', plot: '', genre: [], rating: {} },
-			} as any);
+		mockedAxios.get.mockResolvedValueOnce({ data: { results: [{ id: 'tt1', year: 2020 }] } } as any).mockResolvedValueOnce({
+			data: { id: 'tt1', title: 'Test', plot: '', genre: [], rating: {} },
+		} as any);
 
 		const result = await new ImdbProvider().fetch('Test', 'movie');
 

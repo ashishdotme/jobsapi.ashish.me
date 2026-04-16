@@ -115,3 +115,132 @@ export interface UpdatesBridgePost {
   createdAt: string
   updatedAt: string
 }
+
+export type TodosWorkspaceNormalizedBoardColumnId =
+  | 'backlog'
+  | 'in_progress'
+  | 'blocked'
+  | 'done'
+
+export interface TodosWorkspaceNormalizedBoardColumn {
+  id: TodosWorkspaceNormalizedBoardColumnId
+  label: string
+  taskCount: number
+  tasks?: TodosWorkspaceTask[]
+}
+
+export interface TodosWorkspaceBoardSummary {
+  columns: TodosWorkspaceNormalizedBoardColumn[]
+  totalTaskCount: number
+}
+
+export interface TodosWorkspaceProjectSummary {
+  id: string
+  name: string
+  sourceProjectId: string
+  taskCount: number
+  openTaskCount: number
+  overdueTaskCount: number
+  dueSoonTaskCount: number
+  updatedAt: string
+}
+
+export interface TodosWorkspaceTask {
+  id: string
+  todoId: string
+  taskId: string | null
+  title: string
+  projectId: string
+  projectName: string
+  sourceCategoryId: string
+  sourceCategory: string
+  columnId: TodosWorkspaceNormalizedBoardColumnId
+  completed: boolean
+  dueDate: string | null
+  completedAt: string | null
+  sourceUpdatedAt: string
+  description?: string | null
+}
+
+export interface TodosWorkspaceOverviewPayload {
+  generatedAt: string
+  projects: TodosWorkspaceProjectSummary[]
+  normalizedBoard: TodosWorkspaceBoardSummary
+  overdueTasks: TodosWorkspaceTask[]
+  dueSoonTasks: TodosWorkspaceTask[]
+}
+
+export interface TodosWorkspaceProjectListPayload {
+  projects: TodosWorkspaceProjectSummary[]
+}
+
+export interface TodosWorkspaceCompletedTasksPayload {
+  tasks: TodosWorkspaceTask[]
+}
+
+export interface TodosWorkspaceProjectBoardColumn {
+  sourceCategoryId: string
+  sourceCategory: string
+  normalizedColumnId: TodosWorkspaceNormalizedBoardColumnId
+  normalizedColumnLabel: string
+  taskCount: number
+  taskIds: string[]
+}
+
+export interface TodosWorkspaceProjectBoard {
+  columns: TodosWorkspaceProjectBoardColumn[]
+  totalTaskCount: number
+}
+
+export interface TodosWorkspaceProjectDetailPayload {
+  project: TodosWorkspaceProjectSummary
+  projectBoard: TodosWorkspaceProjectBoard
+  normalizedBoard: TodosWorkspaceBoardSummary
+  tasks: TodosWorkspaceTask[]
+}
+
+export interface TodosWorkspaceCreateTaskPayload {
+  apiKey: string
+  projectId: string
+  sourceCategoryId: string
+  sourceCategory: string
+  columnId: TodosWorkspaceNormalizedBoardColumnId
+  title: string
+  description?: string | null
+  dueDate?: string | null
+}
+
+export interface TodosWorkspaceUpdateTaskPayload {
+  title?: string
+  description?: string | null
+  dueDate?: string | null
+}
+
+export interface TodosWorkspaceMoveTaskPayload {
+  targetProjectId: string
+  targetSourceCategoryId: string
+  targetSourceCategory: string
+  targetColumnId: TodosWorkspaceNormalizedBoardColumnId
+}
+
+export interface TodosWorkspaceCompleteTaskPayload {
+  completedAt?: string
+}
+
+export interface TodosWorkspaceTaskMutationResponse {
+  taskId: string
+  projectId: string
+  sourceCategoryId: string
+  sourceCategory: string
+  columnId: TodosWorkspaceNormalizedBoardColumnId
+  syncedAt: string
+  task: TodosWorkspaceTask
+}
+
+export interface TodosWorkspaceCreateTaskResponse extends TodosWorkspaceTaskMutationResponse {}
+
+export interface TodosWorkspaceUpdateTaskResponse extends TodosWorkspaceTaskMutationResponse {}
+
+export interface TodosWorkspaceMoveTaskResponse extends TodosWorkspaceTaskMutationResponse {}
+
+export interface TodosWorkspaceCompleteTaskResponse extends TodosWorkspaceTaskMutationResponse {}

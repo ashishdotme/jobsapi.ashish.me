@@ -43,11 +43,13 @@ describe('ThreadsClientService', () => {
 		mockedAxios.post.mockResolvedValue({
 			data: { access_token: 'short-lived', user_id: '123' },
 		} as any);
-		mockedAxios.get.mockResolvedValueOnce({
-			data: { access_token: 'long-lived', expires_in: 1000 },
-		} as any).mockResolvedValueOnce({
-			data: { id: '123', username: 'ashish' },
-		} as any);
+		mockedAxios.get
+			.mockResolvedValueOnce({
+				data: { access_token: 'long-lived', expires_in: 1000 },
+			} as any)
+			.mockResolvedValueOnce({
+				data: { id: '123', username: 'ashish' },
+			} as any);
 
 		const shortLived = await service.exchangeCodeForToken({
 			code: 'code-1',

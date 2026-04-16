@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Film, ListChecks, Settings, Tv, UploadCloud, Waypoints } from 'lucide-react'
+import { Film, ListChecks, ListTodo, Settings, Tv, UploadCloud, Waypoints } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -19,8 +19,8 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
+import { selectIsAuthenticated, useAuthStore } from '@/state/auth-store'
 import { cn } from '@/lib/utils'
-import { getApiKey } from '../lib/storage'
 import type { LucideIcon } from 'lucide-react'
 
 type NavItem = {
@@ -45,6 +45,13 @@ const navItems: NavItem[] = [
     description: 'Monitor queue and failures',
     icon: ListChecks,
     title: 'Jobs',
+  },
+  {
+    to: '/todos',
+    label: 'Todos',
+    description: 'Track project work and kanban',
+    icon: ListTodo,
+    title: 'Todos',
   },
   {
     to: '/movies',
@@ -86,11 +93,7 @@ const findCurrentNavItem = (pathname: string) => {
 
 export const AdminLayout = () => {
   const location = useLocation()
-  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getApiKey()))
-
-  useEffect(() => {
-    setHasApiKey(Boolean(getApiKey()))
-  }, [location.pathname])
+  const hasApiKey = useAuthStore(selectIsAuthenticated)
 
   const currentNavItem = useMemo(() => findCurrentNavItem(location.pathname), [location.pathname])
 

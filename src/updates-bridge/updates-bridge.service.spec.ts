@@ -55,18 +55,10 @@ describe('UpdatesBridgeService', () => {
 			}),
 		};
 
-		service = new UpdatesBridgeService(
-			repository as any,
-			threadsClient as any,
-			blueskyClient as any,
-			updatesApiClient as any,
-			configService as any,
-		);
+		service = new UpdatesBridgeService(repository as any, threadsClient as any, blueskyClient as any, updatesApiClient as any, configService as any);
 	});
 
-	const createPendingPost = (
-		overrides: Partial<ThreadsBridgePost> = {},
-	): ThreadsBridgePost => ({
+	const createPendingPost = (overrides: Partial<ThreadsBridgePost> = {}): ThreadsBridgePost => ({
 		id: 'row-1',
 		sourcePlatform: 'threads',
 		sourcePostId: 'post-1',
@@ -135,19 +127,14 @@ describe('UpdatesBridgeService', () => {
 		});
 		threadsClient.fetchPostsSince.mockResolvedValue([]);
 		repository.listDeliverablePosts.mockResolvedValue([createPendingPost()]);
-		updatesApiClient.createOrUpdateUpdate
-			.mockResolvedValueOnce({ id: '42', created: true })
-			.mockResolvedValueOnce({ id: '42', created: false });
+		updatesApiClient.createOrUpdateUpdate.mockResolvedValueOnce({ id: '42', created: true }).mockResolvedValueOnce({ id: '42', created: false });
 		blueskyClient.publish.mockResolvedValue({
 			uri: 'at://did:plc:test/app.bsky.feed.post/123',
 		});
 
 		await service.runScheduledSync();
 
-		expect(updatesApiClient.createOrUpdateUpdate).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({ blueskyUri: null }),
-		);
+		expect(updatesApiClient.createOrUpdateUpdate).toHaveBeenNthCalledWith(1, expect.objectContaining({ blueskyUri: null }));
 		expect(blueskyClient.publish).toHaveBeenCalled();
 		expect(updatesApiClient.createOrUpdateUpdate).toHaveBeenNthCalledWith(
 			2,
@@ -156,10 +143,7 @@ describe('UpdatesBridgeService', () => {
 			}),
 		);
 		expect(repository.markApiDelivered).toHaveBeenCalledWith('row-1', '42');
-		expect(repository.markBlueskyDelivered).toHaveBeenCalledWith(
-			'row-1',
-			'at://did:plc:test/app.bsky.feed.post/123',
-		);
+		expect(repository.markBlueskyDelivered).toHaveBeenCalledWith('row-1', 'at://did:plc:test/app.bsky.feed.post/123');
 	});
 
 	it('marks permanent failure after the tenth failed attempt', async () => {
@@ -171,12 +155,8 @@ describe('UpdatesBridgeService', () => {
 		});
 		repository.getCheckpoint.mockResolvedValue(null);
 		threadsClient.fetchPostsSince.mockResolvedValue([]);
-		repository.listDeliverablePosts.mockResolvedValue([
-			createPendingPost({ attemptCount: 9 }),
-		]);
-		updatesApiClient.createOrUpdateUpdate.mockRejectedValue(
-			new Error('temporary failure'),
-		);
+		repository.listDeliverablePosts.mockResolvedValue([createPendingPost({ attemptCount: 9 })]);
+		updatesApiClient.createOrUpdateUpdate.mockRejectedValue(new Error('temporary failure'));
 
 		await service.runScheduledSync();
 

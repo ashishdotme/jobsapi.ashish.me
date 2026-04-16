@@ -26,9 +26,7 @@ describe('UpdatesBridgeRepository', () => {
 
 	it('upserts source posts by sourcePlatform and sourcePostId', async () => {
 		const first = await repository.upsertPost(createPost());
-		const second = await repository.upsertPost(
-			createPost({ content: 'Updated text' }),
-		);
+		const second = await repository.upsertPost(createPost({ content: 'Updated text' }));
 
 		expect(first.id).toBe(second.id);
 		expect(second.content).toBe('Updated text');
@@ -76,9 +74,7 @@ describe('UpdatesBridgeRepository', () => {
 		});
 
 		const checkpoint = await repository.getCheckpoint('threads');
-		const pending = await repository.listDeliverablePosts(
-			new Date('2026-04-13T10:06:00.000Z'),
-		);
+		const pending = await repository.listDeliverablePosts(new Date('2026-04-13T10:06:00.000Z'));
 
 		expect(checkpoint).toEqual(
 			expect.objectContaining({
@@ -86,16 +82,13 @@ describe('UpdatesBridgeRepository', () => {
 				lastSeenPostId: 'post-1',
 			}),
 		);
-		expect(pending.map((row) => row.id)).toContain(post.id);
+		expect(pending.map(row => row.id)).toContain(post.id);
 	});
 
 	it('updates delivery metadata for api and bluesky destinations', async () => {
 		const post = await repository.upsertPost(createPost());
 		await repository.markApiDelivered(post.id, '42');
-		await repository.markBlueskyDelivered(
-			post.id,
-			'at://did:plc:test/app.bsky.feed.post/123',
-		);
+		await repository.markBlueskyDelivered(post.id, 'at://did:plc:test/app.bsky.feed.post/123');
 
 		const [saved] = await repository.listDeliverablePosts(new Date());
 		expect(saved).toBeUndefined();
@@ -118,12 +111,8 @@ describe('UpdatesBridgeRepository', () => {
 			permanent: false,
 		});
 
-		const earlyRows = await repository.listDeliverablePosts(
-			new Date('2026-04-13T11:00:00.000Z'),
-		);
-		const laterRows = await repository.listDeliverablePosts(
-			new Date('2026-04-13T12:01:00.000Z'),
-		);
+		const earlyRows = await repository.listDeliverablePosts(new Date('2026-04-13T11:00:00.000Z'));
+		const laterRows = await repository.listDeliverablePosts(new Date('2026-04-13T12:01:00.000Z'));
 
 		expect(earlyRows).toHaveLength(0);
 		expect(laterRows).toHaveLength(1);
@@ -175,7 +164,7 @@ describe('UpdatesBridgeRepository', () => {
 
 		const rows = await repository.listRecentPosts(2);
 
-		expect(rows.map((row) => row.sourcePostId)).toEqual(['post-2', 'post-1']);
+		expect(rows.map(row => row.sourcePostId)).toEqual(['post-2', 'post-1']);
 	});
 
 	it('builds delivery metrics for the updates workspace', async () => {

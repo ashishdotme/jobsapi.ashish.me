@@ -23,7 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getApiKey } from '@/lib/storage'
+import { selectApiKey, useAuthStore } from '@/state/auth-store'
 import type { ImportJobSummary, MediaRecord, MetadataField } from '../types'
 import { StatCard } from './StatCard'
 
@@ -86,6 +86,7 @@ export const MediaMaintenanceWorkspace = ({
   loadRecords,
   createBackfillJob,
 }: MediaMaintenanceWorkspaceProps) => {
+  const apiKey = useAuthStore(selectApiKey)
   const navigate = useNavigate()
   const [records, setRecords] = useState<NormalizedMediaRecord[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -104,7 +105,6 @@ export const MediaMaintenanceWorkspace = ({
     let active = true
 
     const run = async () => {
-      const apiKey = getApiKey()
       if (!apiKey) {
         if (active) {
           setError('Set the API key in Settings before loading the catalog')
@@ -139,7 +139,7 @@ export const MediaMaintenanceWorkspace = ({
     return () => {
       active = false
     }
-  }, [entityLabel, entityLabelPlural, loadRecords])
+  }, [apiKey, entityLabel, entityLabelPlural, loadRecords])
 
   useEffect(() => {
     setSelectedIds(current => current.filter(id => records.some(record => record.id === id)))
@@ -215,7 +215,6 @@ export const MediaMaintenanceWorkspace = ({
   }
 
   const onCreateJob = async () => {
-    const apiKey = getApiKey()
     if (!apiKey) {
       setActionError('Set the API key in Settings before creating a job')
       return

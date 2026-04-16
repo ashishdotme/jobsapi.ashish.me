@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { selectApiKey, useAuthStore } from '@/state/auth-store'
 import { getJob, getJobRows, retryFailedRows } from '../lib/api'
 import {
   formatMetadataFields,
@@ -30,7 +31,6 @@ import {
   getRowTitle,
   isMetadataBackfillPayload,
 } from '../lib/jobs'
-import { getApiKey } from '../lib/storage'
 import type { ImportJobSummary, ImportRow, RowStatus } from '../types'
 import { StatCard } from '../components/StatCard'
 import { StatusPill } from '../components/StatusPill'
@@ -38,6 +38,7 @@ import { StatusPill } from '../components/StatusPill'
 const REFRESH_INTERVAL_MS = 4000
 
 export const JobDetailPage = () => {
+  const apiKey = useAuthStore(selectApiKey)
   const params = useParams<{ jobId: string }>()
   const jobId = params.jobId ?? ''
 
@@ -51,7 +52,6 @@ export const JobDetailPage = () => {
   const shouldPoll = useMemo(() => job?.status === 'queued' || job?.status === 'processing', [job?.status])
 
   const load = useCallback(async () => {
-    const apiKey = getApiKey()
     if (!apiKey) {
       setError('Set the API key in Settings first')
       setLoading(false)
@@ -76,7 +76,7 @@ export const JobDetailPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [jobId, statusFilter])
+  }, [apiKey, jobId, statusFilter])
 
   useEffect(() => {
     void load()
@@ -92,7 +92,6 @@ export const JobDetailPage = () => {
   }, [load, shouldPoll])
 
   const onRetryFailed = async () => {
-    const apiKey = getApiKey()
     if (!apiKey) {
       setError('Set the API key in Settings first')
       return

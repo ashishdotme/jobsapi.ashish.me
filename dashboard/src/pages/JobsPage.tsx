@@ -22,9 +22,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { selectApiKey, useAuthStore } from '@/state/auth-store'
 import { listJobs } from '../lib/api'
 import { getJobKindMeta, getJobProgressValue } from '../lib/jobs'
-import { getApiKey } from '../lib/storage'
 import type { ImportJobSummary, JobStatus } from '../types'
 import { StatCard } from '../components/StatCard'
 import { StatusPill } from '../components/StatusPill'
@@ -34,6 +34,7 @@ const REFRESH_INTERVAL_MS = 10000
 type KindFilter = 'all' | 'imports' | 'movie_metadata' | 'show_metadata'
 
 export const JobsPage = () => {
+  const apiKey = useAuthStore(selectApiKey)
   const [jobs, setJobs] = useState<ImportJobSummary[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -44,7 +45,6 @@ export const JobsPage = () => {
     let active = true
 
     const run = async () => {
-      const apiKey = getApiKey()
       if (!apiKey) {
         if (!active) {
           return
@@ -83,7 +83,7 @@ export const JobsPage = () => {
       active = false
       window.clearInterval(intervalId)
     }
-  }, [])
+  }, [apiKey])
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {

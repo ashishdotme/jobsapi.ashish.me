@@ -156,9 +156,7 @@ export class OmdbProvider implements MediaMetadataProvider {
 
 		try {
 			const omdbType = type === 'show' ? 'series' : 'movie';
-			const response = await axios.get(
-				`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&type=${omdbType}&apikey=${apiKey}`,
-			);
+			const response = await axios.get(`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&type=${omdbType}&apikey=${apiKey}`);
 			if (!response.data || response.data.Response === 'False') {
 				return null;
 			}

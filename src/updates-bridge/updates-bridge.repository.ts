@@ -1,24 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { UpdatesBridgeDbService } from './updates-bridge.db.service';
-import type {
-	NormalizedThreadsPost,
-	ThreadsBridgeCheckpoint,
-	ThreadsBridgeIntegration,
-	ThreadsBridgeMetrics,
-	ThreadsBridgeOAuthState,
-	ThreadsBridgePost,
-} from './types';
+import type { NormalizedThreadsPost, ThreadsBridgeCheckpoint, ThreadsBridgeIntegration, ThreadsBridgeMetrics, ThreadsBridgeOAuthState, ThreadsBridgePost } from './types';
 
-type SaveIntegrationInput = Pick<
-	ThreadsBridgeIntegration,
-	'threadsUserId' | 'threadsUsername' | 'accessToken' | 'accessTokenExpiresAt'
->;
+type SaveIntegrationInput = Pick<ThreadsBridgeIntegration, 'threadsUserId' | 'threadsUsername' | 'accessToken' | 'accessTokenExpiresAt'>;
 
-type SaveCheckpointInput = Pick<
-	ThreadsBridgeCheckpoint,
-	'sourcePlatform' | 'lastCheckedAt' | 'lastSeenPostId' | 'lastCursor'
->;
+type SaveCheckpointInput = Pick<ThreadsBridgeCheckpoint, 'sourcePlatform' | 'lastCheckedAt' | 'lastSeenPostId' | 'lastCursor'>;
 
 @Injectable()
 export class UpdatesBridgeRepository {
@@ -58,10 +45,7 @@ export class UpdatesBridgeRepository {
 		}
 
 		const pool = this.updatesBridgeDbService.getPool();
-		const result = await pool?.query(
-			'SELECT id, state, return_to, expires_at, created_at FROM threads_bridge_oauth_states WHERE state = $1',
-			[state],
-		);
+		const result = await pool?.query('SELECT id, state, return_to, expires_at, created_at FROM threads_bridge_oauth_states WHERE state = $1', [state]);
 		const row = result?.rows[0];
 		if (!row) {
 			return null;
@@ -133,7 +117,7 @@ export class UpdatesBridgeRepository {
 
 	async getActiveIntegration(): Promise<ThreadsBridgeIntegration | null> {
 		if (!this.updatesBridgeDbService.isEnabled()) {
-			return Array.from(this.integrations.values()).find((integration) => integration.disconnectedAt === null) ?? null;
+			return Array.from(this.integrations.values()).find(integration => integration.disconnectedAt === null) ?? null;
 		}
 		const pool = this.updatesBridgeDbService.getPool();
 		const result = await pool?.query(
@@ -179,13 +163,7 @@ export class UpdatesBridgeRepository {
 				last_seen_post_id = EXCLUDED.last_seen_post_id,
 				last_cursor = EXCLUDED.last_cursor,
 				updated_at = EXCLUDED.updated_at`,
-			[
-				checkpoint.sourcePlatform,
-				checkpoint.lastCheckedAt,
-				checkpoint.lastSeenPostId,
-				checkpoint.lastCursor,
-				checkpoint.updatedAt,
-			],
+			[checkpoint.sourcePlatform, checkpoint.lastCheckedAt, checkpoint.lastSeenPostId, checkpoint.lastCursor, checkpoint.updatedAt],
 		);
 
 		return checkpoint;
@@ -196,10 +174,7 @@ export class UpdatesBridgeRepository {
 			return this.checkpoints.get(sourcePlatform) ?? null;
 		}
 		const pool = this.updatesBridgeDbService.getPool();
-		const result = await pool?.query(
-			'SELECT * FROM threads_bridge_checkpoints WHERE source_platform = $1',
-			[sourcePlatform],
-		);
+		const result = await pool?.query('SELECT * FROM threads_bridge_checkpoints WHERE source_platform = $1', [sourcePlatform]);
 		const row = result?.rows[0];
 		if (!row) {
 			return null;
@@ -315,17 +290,14 @@ export class UpdatesBridgeRepository {
 			return this.posts.get(this.postKey(sourcePlatform, sourcePostId)) ?? null;
 		}
 		const pool = this.updatesBridgeDbService.getPool();
-		const result = await pool?.query(
-			'SELECT * FROM threads_bridge_posts WHERE source_platform = $1 AND source_post_id = $2',
-			[sourcePlatform, sourcePostId],
-		);
+		const result = await pool?.query('SELECT * FROM threads_bridge_posts WHERE source_platform = $1 AND source_post_id = $2', [sourcePlatform, sourcePostId]);
 		const row = result?.rows[0];
 		return row ? this.mapPostRow(row) : null;
 	}
 
 	async listDeliverablePosts(now: Date): Promise<ThreadsBridgePost[]> {
 		if (!this.updatesBridgeDbService.isEnabled()) {
-			return Array.from(this.posts.values()).filter((post) => this.isDeliverable(post, now));
+			return Array.from(this.posts.values()).filter(post => this.isDeliverable(post, now));
 		}
 		const pool = this.updatesBridgeDbService.getPool();
 		const result = await pool?.query(
@@ -336,7 +308,7 @@ export class UpdatesBridgeRepository {
 			 ORDER BY source_published_at ASC`,
 			[now.toISOString()],
 		);
-		return (result?.rows ?? []).map((row) => this.mapPostRow(row));
+		return (result?.rows ?? []).map(row => this.mapPostRow(row));
 	}
 
 	async listRecentPosts(limit: number): Promise<ThreadsBridgePost[]> {
@@ -353,7 +325,7 @@ export class UpdatesBridgeRepository {
 			 LIMIT $1`,
 			[limit],
 		);
-		return (result?.rows ?? []).map((row) => this.mapPostRow(row));
+		return (result?.rows ?? []).map(row => this.mapPostRow(row));
 	}
 
 	async retryFailedDeliveries(): Promise<number> {
@@ -386,18 +358,19 @@ export class UpdatesBridgeRepository {
 	async getPostMetrics(): Promise<ThreadsBridgeMetrics> {
 		if (!this.updatesBridgeDbService.isEnabled()) {
 			const posts = Array.from(this.posts.values());
-			const lastAttemptedAt = posts
-				.map((post) => post.lastAttemptedAt)
-				.filter((value): value is string => Boolean(value))
-				.sort((left, right) => right.localeCompare(left))[0] ?? null;
+			const lastAttemptedAt =
+				posts
+					.map(post => post.lastAttemptedAt)
+					.filter((value): value is string => Boolean(value))
+					.sort((left, right) => right.localeCompare(left))[0] ?? null;
 
 			return {
 				total: posts.length,
-				delivered: posts.filter((post) => post.apiStatus === 'delivered' && post.blueskyStatus === 'delivered').length,
-				pending: posts.filter((post) => this.isPending(post)).length,
-				failed: posts.filter((post) => this.isFailed(post)).length,
-				apiDelivered: posts.filter((post) => post.apiStatus === 'delivered').length,
-				blueskyDelivered: posts.filter((post) => post.blueskyStatus === 'delivered').length,
+				delivered: posts.filter(post => post.apiStatus === 'delivered' && post.blueskyStatus === 'delivered').length,
+				pending: posts.filter(post => this.isPending(post)).length,
+				failed: posts.filter(post => this.isFailed(post)).length,
+				apiDelivered: posts.filter(post => post.apiStatus === 'delivered').length,
+				blueskyDelivered: posts.filter(post => post.blueskyStatus === 'delivered').length,
 				lastAttemptedAt,
 			};
 		}
@@ -430,7 +403,7 @@ export class UpdatesBridgeRepository {
 	}
 
 	async markApiDelivered(id: string, apiUpdateId: string): Promise<void> {
-		await this.updatePost(id, (post) => ({
+		await this.updatePost(id, post => ({
 			...post,
 			apiUpdateId,
 			apiStatus: 'delivered',
@@ -441,7 +414,7 @@ export class UpdatesBridgeRepository {
 	}
 
 	async markBlueskyDelivered(id: string, blueskyUri: string): Promise<void> {
-		await this.updatePost(id, (post) => ({
+		await this.updatePost(id, post => ({
 			...post,
 			blueskyUri,
 			blueskyStatus: 'delivered',
@@ -452,7 +425,7 @@ export class UpdatesBridgeRepository {
 	}
 
 	async markDeliveryFailure(id: string, error: string, options: { nextAttemptAt: string | null; permanent: boolean }): Promise<void> {
-		await this.updatePost(id, (post) => ({
+		await this.updatePost(id, post => ({
 			...post,
 			apiStatus: post.apiStatus === 'delivered' ? post.apiStatus : options.permanent ? 'failed_permanent' : 'failed',
 			blueskyStatus: post.blueskyStatus === 'delivered' ? post.blueskyStatus : options.permanent ? 'failed_permanent' : 'failed',
@@ -466,7 +439,7 @@ export class UpdatesBridgeRepository {
 
 	private async updatePost(id: string, updater: (post: ThreadsBridgePost) => ThreadsBridgePost): Promise<void> {
 		if (!this.updatesBridgeDbService.isEnabled()) {
-			const existing = Array.from(this.posts.values()).find((post) => post.id === id);
+			const existing = Array.from(this.posts.values()).find(post => post.id === id);
 			if (!existing) {
 				return;
 			}
@@ -533,12 +506,7 @@ export class UpdatesBridgeRepository {
 	}
 
 	private isFailed(post: ThreadsBridgePost): boolean {
-		return (
-			post.apiStatus === 'failed' ||
-			post.apiStatus === 'failed_permanent' ||
-			post.blueskyStatus === 'failed' ||
-			post.blueskyStatus === 'failed_permanent'
-		);
+		return post.apiStatus === 'failed' || post.apiStatus === 'failed_permanent' || post.blueskyStatus === 'failed' || post.blueskyStatus === 'failed_permanent';
 	}
 
 	private buildRetriedPost(post: ThreadsBridgePost): ThreadsBridgePost | null {

@@ -1,4 +1,23 @@
-import type { ImportJobSummary, ImportRow, MediaRecord, RowStatus, UpdatesBridgePost, UpdatesOverview } from '../types'
+import type {
+  ImportJobSummary,
+  ImportRow,
+  MediaRecord,
+  RowStatus,
+  TodosWorkspaceCompleteTaskPayload,
+  TodosWorkspaceCompleteTaskResponse,
+  TodosWorkspaceCreateTaskPayload,
+  TodosWorkspaceCreateTaskResponse,
+  TodosWorkspaceMoveTaskPayload,
+  TodosWorkspaceMoveTaskResponse,
+  TodosWorkspaceCompletedTasksPayload,
+  TodosWorkspaceOverviewPayload,
+  TodosWorkspaceProjectDetailPayload,
+  TodosWorkspaceProjectListPayload,
+  TodosWorkspaceUpdateTaskPayload,
+  TodosWorkspaceUpdateTaskResponse,
+  UpdatesBridgePost,
+  UpdatesOverview,
+} from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 const API_KEY_REQUIRED_MESSAGE = 'Set API key in Settings first'
@@ -31,10 +50,36 @@ const buildUrl = (path: string, apiKey: string, params?: Record<string, string>)
 }
 
 const parseApiResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const responseText = await response.text()
+    if (!responseText.trim()) {
+      throw new Error(`Request failed with status ${response.status}`)
+    }
+
+    let errorMessage: string | null = null
+    try {
+      const data = JSON.parse(responseText) as {
+        error?: unknown
+        message?: unknown
+        errorMessage?: unknown
+      }
+      for (const candidate of [data.error, data.message, data.errorMessage]) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+          errorMessage = candidate
+          break
+        }
+      }
+    } catch {
+    }
+
+    throw new Error(errorMessage ?? responseText)
+  }
+
   const data = await response.json()
-  if (!response.ok || data?.error) {
+  if (data?.error) {
     throw new Error(data?.error ?? `Request failed with status ${response.status}`)
   }
+
   return data as T
 }
 
@@ -235,4 +280,133 @@ export const retryFailedUpdatesDeliveries = async (apiKey: string): Promise<{ re
   })
 
   return parseApiResponse<{ retried: number }>(response)
+}
+
+export const getTodosOverview = async (apiKey: string): Promise<TodosWorkspaceOverviewPayload> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/todos/overview', normalizedApiKey), {
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<TodosWorkspaceOverviewPayload>(response)
+}
+
+export const listTodoProjects = async (apiKey: string): Promise<TodosWorkspaceProjectListPayload> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl('/ops/todos/projects', normalizedApiKey), {
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<TodosWorkspaceProjectListPayload>(response)
+}
+
+export const getTodoProject = async (
+  apiKey: string,
+  projectId: string,
+): Promise<TodosWorkspaceProjectDetailPayload> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl(`/ops/todos/projects/${encodeURIComponent(projectId)}`, normalizedApiKey), {
+    headers: {
+      apiKey: normalizedApiKey,
+    },
+  })
+
+  return parseApiResponse<TodosWorkspaceProjectDetailPayload>(response)
+}
+
+export const getTodoProjectCompleted = async (
+  apiKey: string,
+  projectId: string,
+): Promise<TodosWorkspaceCompletedTasksPayload> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(
+    buildUrl(`/ops/todos/projects/${encodeURIComponent(projectId)}/completed`, normalizedApiKey),
+    {
+      headers: {
+        apiKey: normalizedApiKey,
+      },
+    },
+  )
+
+  return parseApiResponse<TodosWorkspaceCompletedTasksPayload>(response)
+}
+
+export const createTodoTask = async (payload: TodosWorkspaceCreateTaskPayload): Promise<TodosWorkspaceCreateTaskResponse> => {
+  const normalizedApiKey = requireApiKey(payload.apiKey)
+  const response = await fetch(buildUrl('/ops/todos', normalizedApiKey), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apiKey: normalizedApiKey,
+    },
+    body: JSON.stringify({
+      projectId: payload.projectId,
+      sourceCategoryId: payload.sourceCategoryId,
+      sourceCategory: payload.sourceCategory,
+      columnId: payload.columnId,
+      title: payload.title,
+      ...(payload.description !== undefined ? { description: payload.description } : {}),
+      ...(payload.dueDate !== undefined ? { dueDate: payload.dueDate } : {}),
+    }),
+  })
+
+  return parseApiResponse<TodosWorkspaceCreateTaskResponse>(response)
+}
+
+export const updateTodoTask = async (
+  apiKey: string,
+  taskId: string,
+  payload: TodosWorkspaceUpdateTaskPayload,
+): Promise<TodosWorkspaceUpdateTaskResponse> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl(`/ops/todos/${encodeURIComponent(taskId)}`, normalizedApiKey), {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      apiKey: normalizedApiKey,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  return parseApiResponse<TodosWorkspaceUpdateTaskResponse>(response)
+}
+
+export const moveTodoTask = async (
+  apiKey: string,
+  taskId: string,
+  payload: TodosWorkspaceMoveTaskPayload,
+): Promise<TodosWorkspaceMoveTaskResponse> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl(`/ops/todos/${encodeURIComponent(taskId)}/move`, normalizedApiKey), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apiKey: normalizedApiKey,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  return parseApiResponse<TodosWorkspaceMoveTaskResponse>(response)
+}
+
+export const completeTodoTask = async (
+  apiKey: string,
+  taskId: string,
+  payload?: TodosWorkspaceCompleteTaskPayload,
+): Promise<TodosWorkspaceCompleteTaskResponse> => {
+  const normalizedApiKey = requireApiKey(apiKey)
+  const response = await fetch(buildUrl(`/ops/todos/${encodeURIComponent(taskId)}/complete`, normalizedApiKey), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apiKey: normalizedApiKey,
+    },
+    body: JSON.stringify(payload ?? {}),
+  })
+
+  return parseApiResponse<TodosWorkspaceCompleteTaskResponse>(response)
 }

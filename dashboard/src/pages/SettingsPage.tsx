@@ -1,26 +1,37 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { getApiKey, setApiKey } from '../lib/storage'
+import { selectApiKey, selectHasHydrated, useAuthStore } from '@/state/auth-store'
 
 export const SettingsPage = () => {
-  const [apiKey, setApiKeyValue] = useState(getApiKey())
+  const navigate = useNavigate()
+  const hasHydrated = useAuthStore(selectHasHydrated)
+  const apiKey = useAuthStore(selectApiKey)
+  const storeSetApiKey = useAuthStore(state => state.setApiKey)
+  const storeClearApiKey = useAuthStore(state => state.clearApiKey)
+  const [apiKeyValue, setApiKeyValue] = useState(apiKey)
   const [saved, setSaved] = useState(false)
+
+  if (!hasHydrated) {
+    return null
+  }
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
-    setApiKey(apiKey)
+    storeSetApiKey(apiKeyValue)
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }
 
   const onClear = () => {
-    setApiKey('')
+    storeClearApiKey()
     setApiKeyValue('')
     setSaved(false)
+    navigate('/login', { replace: true })
   }
 
   return (
@@ -41,7 +52,7 @@ export const SettingsPage = () => {
           <form onSubmit={onSubmit} className="space-y-4">
             <Input
               type="password"
-              value={apiKey}
+              value={apiKeyValue}
               onChange={event => setApiKeyValue(event.target.value)}
               placeholder="Enter jobsapi API key"
             />

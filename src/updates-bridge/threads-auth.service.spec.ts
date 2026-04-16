@@ -41,11 +41,7 @@ describe('ThreadsAuthService', () => {
 				return undefined;
 			}),
 		};
-		service = new ThreadsAuthService(
-			repository as any,
-			threadsClient as any,
-			configService as any,
-		);
+		service = new ThreadsAuthService(repository as any, threadsClient as any, configService as any);
 	});
 
 	it('creates an authorization url for allowed local returnTo values', async () => {
@@ -53,9 +49,7 @@ describe('ThreadsAuthService', () => {
 			state: 'state-1',
 			returnTo: '/dashboard/settings',
 		});
-		threadsClient.buildAuthorizationUrl.mockReturnValue(
-			'https://threads.net/oauth/authorize?state=state-1',
-		);
+		threadsClient.buildAuthorizationUrl.mockReturnValue('https://threads.net/oauth/authorize?state=state-1');
 
 		const result = await service.createAuthorizationUrl('/dashboard/settings');
 
@@ -68,9 +62,7 @@ describe('ThreadsAuthService', () => {
 	});
 
 	it('rejects disallowed external returnTo values', async () => {
-		await expect(
-			service.createAuthorizationUrl('https://evil.example.com/steal'),
-		).rejects.toBeInstanceOf(BadRequestException);
+		await expect(service.createAuthorizationUrl('https://evil.example.com/steal')).rejects.toBeInstanceOf(BadRequestException);
 	});
 
 	it('validates oauth state and persists the integration on callback', async () => {
@@ -108,8 +100,6 @@ describe('ThreadsAuthService', () => {
 	it('rejects missing or expired oauth states on callback', async () => {
 		repository.getOAuthState.mockResolvedValue(null);
 
-		await expect(service.handleCallback('code-1', 'missing')).rejects.toBeInstanceOf(
-			BadRequestException,
-		);
+		await expect(service.handleCallback('code-1', 'missing')).rejects.toBeInstanceOf(BadRequestException);
 	});
 });

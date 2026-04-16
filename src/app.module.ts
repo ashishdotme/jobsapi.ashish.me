@@ -15,6 +15,7 @@ import { BulkImportModule } from './bulk-import/bulk-import.module';
 import { LoggerModule } from 'nestjs-pino';
 import { buildPinoHttpConfig } from './logging/logger.config';
 import { UpdatesBridgeModule } from './updates-bridge/updates-bridge.module';
+import { TodosWorkspaceModule } from './todos-workspace/todos-workspace.module';
 
 @Module({
 	imports: [
@@ -39,6 +40,7 @@ import { UpdatesBridgeModule } from './updates-bridge/updates-bridge.module';
 		TasksModule,
 		BulkImportModule,
 		UpdatesBridgeModule,
+		TodosWorkspaceModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

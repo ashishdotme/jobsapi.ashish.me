@@ -41,7 +41,7 @@ export class UpdatesBridgeService {
 				userId: maybeRefreshedIntegration.threadsUserId,
 				since,
 			});
-			const normalizedPosts = fetchedPosts.filter((post) => !this.isReply(post.sourcePayload));
+			const normalizedPosts = fetchedPosts.filter(post => !this.isReply(post.sourcePayload));
 
 			for (const post of normalizedPosts) {
 				await this.repository.upsertPost(post);
@@ -49,11 +49,8 @@ export class UpdatesBridgeService {
 
 			await this.repository.saveCheckpoint({
 				sourcePlatform: 'threads',
-				lastCheckedAt:
-					normalizedPosts[normalizedPosts.length - 1]?.sourcePublishedAt ??
-					new Date().toISOString(),
-				lastSeenPostId:
-					normalizedPosts[normalizedPosts.length - 1]?.sourcePostId ?? null,
+				lastCheckedAt: normalizedPosts[normalizedPosts.length - 1]?.sourcePublishedAt ?? new Date().toISOString(),
+				lastSeenPostId: normalizedPosts[normalizedPosts.length - 1]?.sourcePostId ?? null,
 				lastCursor: null,
 			});
 
@@ -117,8 +114,7 @@ export class UpdatesBridgeService {
 	private async refreshIntegrationIfNeeded<T extends { accessToken: string; accessTokenExpiresAt: string; threadsUserId: string; threadsUsername: string }>(
 		integration: T,
 	): Promise<T> {
-		const msUntilExpiry =
-			new Date(integration.accessTokenExpiresAt).getTime() - Date.now();
+		const msUntilExpiry = new Date(integration.accessTokenExpiresAt).getTime() - Date.now();
 		const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
 		if (msUntilExpiry > sevenDaysMs) {
 			return integration;
@@ -142,9 +138,7 @@ export class UpdatesBridgeService {
 	private async deliverPost(post: ThreadsBridgePost): Promise<void> {
 		try {
 			if (post.apiStatus !== 'delivered') {
-				const update = await this.updatesApiClient.createOrUpdateUpdate(
-					this.buildUpdatePayload(post, null),
-				);
+				const update = await this.updatesApiClient.createOrUpdateUpdate(this.buildUpdatePayload(post, null));
 				await this.repository.markApiDelivered(post.id, update.id);
 			}
 
@@ -154,9 +148,7 @@ export class UpdatesBridgeService {
 					mediaUrls: post.sourcePostType === 'post' ? post.mediaUrls.slice(0, 4) : [],
 				});
 				await this.repository.markBlueskyDelivered(post.id, blueskyResult.uri);
-				await this.updatesApiClient.createOrUpdateUpdate(
-					this.buildUpdatePayload(post, blueskyResult.uri),
-				);
+				await this.updatesApiClient.createOrUpdateUpdate(this.buildUpdatePayload(post, blueskyResult.uri));
 			}
 		} catch (error) {
 			const nextAttemptNumber = post.attemptCount + 1;
@@ -202,10 +194,7 @@ export class UpdatesBridgeService {
 	}
 
 	private getBootstrapSince(): string {
-		return (
-			this.configService.get<string>('THREADS_BOOTSTRAP_SINCE') ??
-			new Date().toISOString()
-		);
+		return this.configService.get<string>('THREADS_BOOTSTRAP_SINCE') ?? new Date().toISOString();
 	}
 
 	private calculateNextAttemptAt(attemptNumber: number): string {
