@@ -10,7 +10,6 @@ async function bootstrap() {
 	});
 	app.useLogger(app.get(Logger));
 	configureApp(app);
-	const port = Number(process.env.PORT ?? 3000);
-	await app.listen(Number.isFinite(port) ? port : 3000);
+	await app.listen(4123);
 }
 bootstrap();
